@@ -76,11 +76,14 @@ CREATE TABLE `equipment` (
 CREATE TABLE `equipment_issue` (
   `issue_id` int(11) NOT NULL,
   `equipment_id` int(11) NOT NULL,
-  `athletic_id` int(11) NOT NULL,
+  `quantity` int(11) NOT NULL DEFAULT 1,
+  `athletic_id` int(11) DEFAULT NULL,
+  `recipient_type` enum('Athlete','Coach') NOT NULL DEFAULT 'Athlete',
+  `recipient_name` varchar(150) DEFAULT NULL,
   `issue_date` date NOT NULL,
   `expected_return_date` date NOT NULL,
-  `actual_return_date` date NOT NULL,
-  `status` enum('Issued','Returned') NOT NULL
+  `actual_return_date` date DEFAULT NULL,
+  `status` enum('Pending','Issued','Returned','Rejected') NOT NULL DEFAULT 'Pending'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -472,6 +475,90 @@ ALTER TABLE `user`
 --
 -- AUTO_INCREMENT for dumped tables
 --
+
+--
+-- AUTO_INCREMENT for table `user`
+--
+ALTER TABLE `user`
+  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `sports`
+--
+ALTER TABLE `sports`
+  MODIFY `sport_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `Athletic`
+--
+ALTER TABLE `Athletic`
+  MODIFY `athlete_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `equipment`
+--
+ALTER TABLE `equipment`
+  MODIFY `equipment_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `equipment_issue`
+--
+ALTER TABLE `equipment_issue`
+  MODIFY `issue_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `facilities`
+--
+ALTER TABLE `facilities`
+  MODIFY `facility_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `facility_bookings`
+--
+ALTER TABLE `facility_bookings`
+  MODIFY `booking_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `fixtures`
+--
+ALTER TABLE `fixtures`
+  MODIFY `fixture_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `match_squads`
+--
+ALTER TABLE `match_squads`
+  MODIFY `squad_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `seasons`
+--
+ALTER TABLE `seasons`
+  MODIFY `season_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `announcements`
+--
+ALTER TABLE `announcements`
+  MODIFY `announcement_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `notfications`
+--
+ALTER TABLE `notfications`
+  MODIFY `notification_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `injuries`
+--
+ALTER TABLE `injuries`
+  MODIFY `injury_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `medical_clearances`
+--
+ALTER TABLE `medical_clearances`
+  MODIFY `clearance_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `university_colors`

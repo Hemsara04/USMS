@@ -1,0 +1,210 @@
+/* ==========================================================================
+   USMS Authentication Styles (Login & Register)
+   ========================================================================== */
+
+/* Layout wrapper for split screen */
+.auth-wrapper {
+    display: flex;
+    height: 100vh;
+    width: 100%;
+    overflow: hidden;
+}
+
+/* Left side branding / image */
+.auth-sidebar {
+    display: none; /* Hidden on mobile by default */
+    background-color: var(--primary-color);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Show on desktop */
+@media (min-width: 768px) {
+    .auth-sidebar {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        width: 50%;
+        padding: 3rem;
+    }
+}
+
+.auth-sidebar-bg {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: #001c39; /* Deep navy blue from original UI */
+    z-index: 1;
+}
+
+.auth-sidebar-bg::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url('../images/auth-bg.jpg');
+    background-size: cover;
+    background-position: center;
+    opacity: 0.6;
+    mix-blend-mode: overlay;
+}
+
+.auth-sidebar-content {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    color: white;
+}
+
+.auth-sidebar-title {
+    font-size: 3.5rem;
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 1rem;
+    color: var(--secondary-color);
+    text-transform: uppercase;
+}
+
+.auth-sidebar-subtitle {
+    font-size: 1.25rem;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    opacity: 0.9;
+}
+
+/* Right side form area */
+.auth-main {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+    background-color: var(--bg-color);
+    position: relative;
+    height: 100%;
+    overflow-y: auto;
+}
+
+@media (min-width: 768px) {
+    .auth-main {
+        width: 50%;
+    }
+}
+
+/* Background subtle pattern */
+.auth-main::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0.03;
+    background-image: radial-gradient(#0d1c2e 1px, transparent 1px);
+    background-size: 24px 24px;
+    z-index: 0;
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 450px;
+    background-color: var(--card-bg);
+    border-radius: 20px; /* Softer radius for modern look */
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--border-color);
+    padding: 2.5rem;
+    position: relative;
+    z-index: 1;
+}
+
+.auth-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.auth-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin-bottom: 0.5rem;
+}
+
+.auth-subtitle {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+}
+
+/* Custom form elements for auth */
+.auth-form-group {
+    margin-bottom: 1.25rem;
+}
+
+.auth-form-label {
+    display: block;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 0.5rem;
+}
+
+.auth-input-wrapper {
+    position: relative;
+}
+
+/* Icons inside inputs */
+.auth-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
+    color: var(--text-muted);
+}
+
+.auth-input {
+    width: 100%;
+    padding: 0.75rem 1rem 0.75rem 2.75rem; /* Left padding for icon */
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-lg);
+    font-family: inherit;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+    background-color: #F8FAFC;
+}
+
+.auth-input:focus {
+    outline: none;
+    border-color: var(--secondary-color);
+    background-color: white;
+    box-shadow: 0 0 0 3px rgba(132, 204, 22, 0.15); /* Green glow */
+}
+
+select.auth-input {
+    appearance: none;
+    cursor: pointer;
+}
+
+.auth-btn {
+    width: 100%;
+    padding: 0.85rem;
+    font-size: 1rem;
+    font-weight: 600;
+    margin-top: 1rem;
+    border-radius: var(--border-radius-lg);
+}
+
+.auth-footer {
+    margin-top: 1.5rem;
+    text-align: center;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.auth-link {
+    color: var(--primary-color);
+    font-weight: 600;
+    transition: color 0.2s;
+}
+
+.auth-link:hover {
+    color: var(--secondary-color);
+}
