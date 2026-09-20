@@ -140,13 +140,13 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
                                         <div class="cell-actions">
                                             <form action="../controllers/TicController.php?action=approve_booking" method="POST" style="display:inline;">
                                                 <input type="hidden" name="booking_id" value="<?= $b['booking_id'] ?>">
-                                                <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('Approve this facility booking?')">
+                                                <button type="submit" class="btn btn-success btn-sm" onclick="return USMS.confirmForm(event, this, 'Approve this facility booking?')">
                                                     <span class="material-symbols-outlined" style="font-size:15px;">check</span> Approve
                                                 </button>
                                             </form>
                                             <form action="../controllers/TicController.php?action=reject_booking" method="POST" style="display:inline;">
                                                 <input type="hidden" name="booking_id" value="<?= $b['booking_id'] ?>">
-                                                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Reject this booking request?')">
+                                                <button type="submit" class="btn btn-danger btn-sm" onclick="return USMS.confirmForm(event, this, 'Reject this facility booking request?')">
                                                     <span class="material-symbols-outlined" style="font-size:15px;">close</span> Reject
                                                 </button>
                                             </form>
@@ -218,7 +218,7 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
                                     <td class="text-right">
                                         <form action="../controllers/TicController.php?action=release_booking" method="POST" style="display:inline;">
                                             <input type="hidden" name="booking_id" value="<?= $res['booking_id'] ?>">
-                                            <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Complete and release reservation for <?= htmlspecialchars(addslashes($res['facility_name'])) ?>? This will free up the venue.')" title="Complete & Release Location">
+                                            <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return USMS.confirmForm(event, this, 'Complete and release reservation for <?= htmlspecialchars(addslashes($res['facility_name'])) ?>? This will free up the venue.')" title="Complete & Release Location">
                                                 <span class="material-symbols-outlined" style="font-size:15px;">delete</span> Release / Done
                                             </button>
                                         </form>

@@ -3,7 +3,8 @@ $currentPage = basename($_SERVER['PHP_SELF']);
 ?>
 <aside class="sidebar">
     <div class="sidebar-logo">
-        <span>UOC Sport</span>
+        <span class="material-symbols-outlined" style="color:var(--accent); font-size:24px;">campaign</span>
+        <span>USMS President</span>
     </div>
     <nav class="sidebar-nav">
         <div class="sidebar-section-label">President Portal</div>

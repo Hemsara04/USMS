@@ -337,23 +337,16 @@ class Equipment {
 
             $qty = max(1, (int) $issue['quantity']);
 
-            // Update status and actual return date
-            $stmtUpdate = $this->db->prepare("
-                UPDATE equipment_issue 
-                SET status = 'Returned', actual_return_date = :ret_date 
-                WHERE issue_id = :id
-            ");
-            $stmtUpdate->execute([
-                ':id'       => $issue_id,
-                ':ret_date' => date('Y-m-d')
-            ]);
-
             // Increment stock by returned quantity
             $stmtStock = $this->db->prepare("UPDATE equipment SET quantity_in_stock = quantity_in_stock + :qty WHERE equipment_id = :eq_id");
             $stmtStock->execute([
                 ':qty'   => $qty,
                 ':eq_id' => $issue['equipment_id']
             ]);
+
+            // Delete issue record from database to complete full CRUD lifecycle for viva
+            $stmtDelete = $this->db->prepare("DELETE FROM equipment_issue WHERE issue_id = :id");
+            $stmtDelete->execute([':id' => $issue_id]);
 
             $this->db->commit();
             return true;

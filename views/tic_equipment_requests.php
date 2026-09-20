@@ -128,13 +128,13 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
                                     <div class="cell-actions">
                                         <form action="../controllers/TicController.php?action=approve_request" method="POST" style="display:inline;">
                                             <input type="hidden" name="issue_id" value="<?= $r['issue_id'] ?>">
-                                            <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('Approve and issue this equipment (<?= (int)($r['quantity'] ?? 1) ?> units)?')">
+                                            <button type="submit" class="btn btn-success btn-sm" onclick="return USMS.confirmForm(event, this, 'Approve and issue this equipment (<?= (int)($r['quantity'] ?? 1) ?> units)?')">
                                                 <span class="material-symbols-outlined" style="font-size:15px;">check</span> Approve
                                             </button>
                                         </form>
                                         <form action="../controllers/TicController.php?action=reject_request" method="POST" style="display:inline;">
                                             <input type="hidden" name="issue_id" value="<?= $r['issue_id'] ?>">
-                                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Reject this request?')">
+                                            <button type="submit" class="btn btn-danger btn-sm" onclick="return USMS.confirmForm(event, this, 'Reject this equipment request?')">
                                                 <span class="material-symbols-outlined" style="font-size:15px;">close</span> Reject
                                             </button>
                                         </form>

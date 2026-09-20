@@ -143,7 +143,7 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
                                     <div class="cell-actions">
                                         <form action="../controllers/TicController.php?action=mark_returned" method="POST" style="display:inline;">
                                             <input type="hidden" name="issue_id" value="<?= $co['issue_id'] ?>">
-                                            <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('Confirm return of <?= (int)($co['quantity'] ?? 1) ?> units of <?= htmlspecialchars(addslashes($co['item_name'])) ?>?')">
+                                            <button type="submit" class="btn btn-success btn-sm" onclick="return USMS.confirmForm(event, this, 'Confirm return of <?= (int)($co['quantity'] ?? 1) ?> units of <?= htmlspecialchars(addslashes($co['item_name'])) ?>? This will restock the inventory and clear this check-out record.')">
                                                 <span class="material-symbols-outlined" style="font-size:15px;">assignment_returned</span> Mark Returned
                                             </button>
                                         </form>

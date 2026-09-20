@@ -303,14 +303,21 @@ class TicController {
     private function addFixture() {
         $sportId     = (int) ($_POST['sport_id'] ?? 0);
         $facilityId  = (int) ($_POST['facility_id'] ?? 0);
-        $opponent    = trim($_POST['opponent'] ?? '');
         $fixtureType = $_POST['fixture_type'] ?? 'Inter-University';
         $fixtureDate = $_POST['fixture_date'] ?? date('Y-m-d');
         $fixtureTime = $_POST['fixture_time'] ?? '15:00:00';
 
+        if ($fixtureType === 'Inter-Faculty') {
+            $homeTeam = trim($_POST['home_faculty'] ?? 'Faculty of Science');
+            $opponent = trim($_POST['opponent_faculty'] ?? 'Faculty of Arts');
+        } else {
+            $homeTeam = trim($_POST['home_team'] ?? 'University of Colombo');
+            $opponent = trim($_POST['opponent'] ?? '');
+        }
+
         if ($sportId > 0 && $facilityId > 0 && !empty($opponent)) {
-            $this->squadModel->createFixture($sportId, $facilityId, $opponent, $fixtureType, $fixtureDate, $fixtureTime);
-            $_SESSION['flash_success'] = "Match fixture vs {$opponent} added successfully!";
+            $this->squadModel->createFixture($sportId, $facilityId, $opponent, $fixtureType, $fixtureDate, $fixtureTime, $homeTeam);
+            $_SESSION['flash_success'] = "Match fixture {$homeTeam} vs {$opponent} added successfully!";
         } else {
             $_SESSION['flash_error'] = 'Please fill all required fixture details.';
         }

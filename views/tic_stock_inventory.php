@@ -206,7 +206,7 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
                                     </button>
                                     <form action="../controllers/TicController.php?action=delete_equipment" method="POST" style="display:inline;">
                                         <input type="hidden" name="equipment_id" value="<?= $item['equipment_id'] ?>">
-                                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to remove <?= htmlspecialchars(addslashes($item['item_name'])) ?>?')">
+                                        <button type="submit" class="btn btn-danger btn-sm" onclick="return USMS.confirmForm(event, this, 'Are you sure you want to remove <?= htmlspecialchars(addslashes($item['item_name'])) ?> from inventory?')">
                                             <span class="material-symbols-outlined" style="font-size:15px;">delete</span>
                                         </button>
                                     </form>

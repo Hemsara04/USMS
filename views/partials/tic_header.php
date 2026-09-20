@@ -1,18 +1,194 @@
+<?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+$headerUserId   = $_SESSION['user_id'] ?? null;
+$headerUsername = $_SESSION['username'] ?? 'User';
+$headerEmail    = $_SESSION['email'] ?? 'user@uoc.ac.lk';
+$headerRole     = $_SESSION['role'] ?? 'TIC';
+$headerPhone    = '+94 11 258 1835';
+$headerFullName = ucwords(str_replace('_', ' ', $headerUsername));
+
+if ($headerUserId) {
+    try {
+        require_once __DIR__ . '/../../config/db.php';
+        if (!isset($headerPdo)) {
+            $headerPdo = Database::connect();
+        }
+        $userStmt = $headerPdo->prepare("SELECT phone_number FROM user WHERE user_id = :uid LIMIT 1");
+        $userStmt->execute([':uid' => $headerUserId]);
+        $row = $userStmt->fetch();
+        if ($row && !empty($row['phone_number'])) {
+            $headerPhone = $row['phone_number'];
+        }
+    } catch (Exception $e) {
+        // Fallback default
+    }
+}
+
+// Universal Notification System: Fetch live active announcements
+$headerNotifs = [];
+try {
+    if (!isset($headerPdo)) {
+        require_once __DIR__ . '/../../config/db.php';
+        $headerPdo = Database::connect();
+    }
+    $notifStmt = $headerPdo->query("
+        SELECT 
+            announcement_id,
+            title,
+            content,
+            target_audience,
+            priority,
+            created_at
+        FROM announcements
+        WHERE status = 'Active'
+        ORDER BY 
+            CASE WHEN priority = 'Urgent' THEN 1
+                 WHEN priority = 'Important' THEN 2
+                 ELSE 3 END,
+            created_at DESC
+        LIMIT 15
+    ");
+    $headerNotifs = $notifStmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    $headerNotifs = [];
+}
+$notifCount = count($headerNotifs);
+?>
 <header class="header">
     <div class="header-left">
         <h1 class="header-title"><?= $pageTitle ?? 'Dashboard' ?></h1>
     </div>
     <div class="header-actions">
-        <button class="icon-btn" title="Notifications">
-            <span class="material-symbols-outlined">notifications</span>
-            <span class="notif-dot"></span>
-        </button>
-        <div class="user-avatar" title="Profile">
-            <?php
-            // Use the first letter of the username from session
-            echo isset($_SESSION['username']) ? strtoupper(substr($_SESSION['username'], 0, 1)) : 'U';
-            ?>
+        <!-- Notification Dropdown -->
+        <div class="header-dropdown-wrap">
+            <button type="button" class="icon-btn" id="notifDropdownBtn" title="Notifications" onclick="toggleHeaderDropdown('notifDropdown')">
+                <span class="material-symbols-outlined">notifications</span>
+                <?php if ($notifCount > 0): ?>
+                    <span class="notif-dot"></span>
+                <?php endif; ?>
+            </button>
+            <div class="header-dropdown-menu" id="notifDropdown" style="width: 380px;">
+                <div class="header-dropdown-header">
+                    <span class="header-dropdown-title">Official Announcements</span>
+                    <span style="font-size:11px; color:var(--teal); font-weight:700;"><?= $notifCount ?> ACTIVE</span>
+                </div>
+                <div class="header-dropdown-body" style="max-height: 290px; overflow-y: auto; overflow-x: hidden; padding: 0;">
+                    <?php if ($notifCount === 0): ?>
+                        <div class="notif-empty-state">
+                            <span class="material-symbols-outlined notif-empty-icon">notifications_paused</span>
+                            <div class="notif-empty-title">No Active Announcements</div>
+                            <div class="notif-empty-desc">You are completely caught up! Official updates published by the Student President will appear here in real-time.</div>
+                        </div>
+                    <?php else: ?>
+                        <div class="notif-list">
+                            <?php foreach ($headerNotifs as $n): 
+                                $pColor = '#0D9488';
+                                $pIcon = 'campaign';
+                                $pBg = '#F0FDFA';
+                                if ($n['priority'] === 'Urgent') {
+                                    $pColor = '#EF4444';
+                                    $pIcon = 'emergency';
+                                    $pBg = '#FEF2F2';
+                                } elseif ($n['priority'] === 'Important') {
+                                    $pColor = '#D97706';
+                                    $pIcon = 'announcement';
+                                    $pBg = '#FFFBEB';
+                                }
+                                $timeStr = date('M d, h:i A', strtotime($n['created_at']));
+                            ?>
+                            <div class="notif-item" onclick="toggleNotifAccordion(this)" style="padding: 10px 14px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.15s;" onmouseover="this.style.background='#F8FAFC'" onmouseout="this.style.background='#FFFFFF'">
+                                <div style="display: flex; gap: 10px; align-items: center;">
+                                    <div style="width: 28px; height: 28px; border-radius: 6px; background: <?= $pBg ?>; color: <?= $pColor ?>; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                        <span class="material-symbols-outlined" style="font-size: 16px;"><?= $pIcon ?></span>
+                                    </div>
+                                    <div style="flex: 1; min-width: 0;">
+                                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 4px; margin-bottom: 2px;">
+                                            <span style="font-size: 10px; font-weight: 700; color: <?= $pColor ?>; text-transform: uppercase;"><?= htmlspecialchars($n['priority']) ?></span>
+                                            <span style="font-size: 10px; color: var(--text-3);"><?= $timeStr ?></span>
+                                        </div>
+                                        <div style="font-size: 12.5px; font-weight: 600; color: var(--text-1); line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="<?= htmlspecialchars($n['title']) ?>">
+                                            <?= htmlspecialchars($n['title']) ?>
+                                        </div>
+                                    </div>
+                                    <span class="material-symbols-outlined notif-toggle-arrow" style="font-size: 18px; color: var(--text-3); transition: transform 0.2s ease; flex-shrink: 0;">expand_more</span>
+                                </div>
+
+                                <!-- Collapsed content, expands smoothly on click -->
+                                <div class="notif-expandable-content" style="display: none; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border); font-size: 12px; color: var(--text-2); line-height: 1.5; word-break: break-word;">
+                                    <div style="margin-bottom: 6px;"><?= nl2br(htmlspecialchars(trim($n['content']))) ?></div>
+                                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                                        <span class="badge badge-teal" style="font-size: 9.5px; padding: 1px 6px;"><?= htmlspecialchars($n['target_audience']) ?></span>
+                                        <span style="font-size: 10px; color: var(--text-3);">By Student President</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+                <div class="profile-popover-footer" style="padding: 8px 14px; background: #F8FAFC; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 11px; color: var(--text-3);">Broadcast Network</span>
+                    <?php if ($headerRole === 'President'): ?>
+                        <a href="pres_announcements.php" style="font-size: 11px; color: var(--teal); font-weight: 600; text-decoration: none;">Manage &rarr;</a>
+                    <?php endif; ?>
+                </div>
+            </div>
         </div>
+
+        <!-- User Profile Popover -->
+        <div class="header-dropdown-wrap">
+            <div class="user-avatar" id="profileDropdownBtn" title="My Profile" onclick="toggleHeaderDropdown('profileDropdown')">
+                <?= strtoupper(substr($headerUsername, 0, 1)) ?>
+            </div>
+            <div class="header-dropdown-menu" id="profileDropdown">
+                <div class="header-dropdown-header">
+                    <span class="header-dropdown-title">Account Profile</span>
+                    <span class="profile-popover-role"><?= htmlspecialchars($headerRole) ?></span>
+                </div>
+                <div class="header-dropdown-body">
+                    <div class="profile-popover-card">
+                        <div class="profile-popover-avatar-row">
+                            <div class="profile-popover-avatar">
+                                <?= strtoupper(substr($headerUsername, 0, 1)) ?>
+                            </div>
+                            <div class="profile-popover-meta">
+                                <h4><?= htmlspecialchars($headerFullName) ?></h4>
+                                <span style="font-size:12px; color:var(--text-3);">@<?= htmlspecialchars($headerUsername) ?></span>
+                            </div>
+                        </div>
+                        <div class="profile-popover-details">
+                            <div class="profile-detail-row">
+                                <span>Official Email:</span>
+                                <strong><?= htmlspecialchars($headerEmail) ?></strong>
+                            </div>
+                            <div class="profile-detail-row">
+                                <span>Phone Number:</span>
+                                <strong><?= htmlspecialchars($headerPhone) ?></strong>
+                            </div>
+                            <div class="profile-detail-row">
+                                <span>System Role:</span>
+                                <strong><?= htmlspecialchars($headerRole) ?></strong>
+                            </div>
+                            <div class="profile-detail-row">
+                                <span>Department:</span>
+                                <strong>Sports Advisory Board</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="profile-popover-footer">
+                    <span style="font-size:11.5px; color:var(--text-3);">University of Colombo</span>
+                    <a href="../controllers/AuthController.php?action=logout" class="btn btn-danger btn-sm" style="text-decoration:none;">
+                        <span class="material-symbols-outlined" style="font-size:15px;">logout</span> Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Logout button -->
         <a href="../controllers/AuthController.php?action=logout" class="icon-btn" title="Logout">
             <span class="material-symbols-outlined">logout</span>
         </a>

@@ -1,8 +1,14 @@
 <?php
-require_once '../config/auth_guard.php';
+require_once __DIR__ . '/../config/auth_guard.php';
 requireRole('President');
 
-$pageTitle = 'Announcements';
+require_once __DIR__ . '/../models/Announcement.php';
+
+$announcementModel = new Announcement();
+$stats = $announcementModel->getStats();
+$announcements = $announcementModel->getAllAnnouncements();
+
+$pageTitle = 'Announcement Command Center';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -16,351 +22,523 @@ $pageTitle = 'Announcements';
 <body class="dashboard">
 
     <!-- SIDEBAR -->
-    <?php include 'partials/pres_sidebar.php'; ?>
+    <?php include __DIR__ . '/partials/pres_sidebar.php'; ?>
 
     <!-- MAIN CONTENT -->
     <div class="main-wrapper">
-        <?php include 'partials/tic_header.php'; ?>
+        <?php include __DIR__ . '/partials/tic_header.php'; ?>
 
         <div class="page-content">
 
-            <!-- Page Title -->
+            <!-- Flash Messages -->
+            <?php if (!empty($_SESSION['flash_success'])): ?>
+                <div class="alert alert-success" style="margin-bottom:18px; display:flex; align-items:center; gap:8px;">
+                    <span class="material-symbols-outlined" style="font-size:20px;">check_circle</span>
+                    <span><?= htmlspecialchars($_SESSION['flash_success']) ?></span>
+                </div>
+                <?php unset($_SESSION['flash_success']); ?>
+            <?php endif; ?>
+            <?php if (!empty($_SESSION['flash_error'])): ?>
+                <div class="alert alert-danger" style="margin-bottom:18px; display:flex; align-items:center; gap:8px;">
+                    <span class="material-symbols-outlined" style="font-size:20px;">error</span>
+                    <span><?= htmlspecialchars($_SESSION['flash_error']) ?></span>
+                </div>
+                <?php unset($_SESSION['flash_error']); ?>
+            <?php endif; ?>
+
+            <!-- Page Title Row -->
             <div class="page-title-row">
-                <h2 class="page-title">Announcements</h2>
+                <div>
+                    <h2 class="page-title">Campus Sports Announcement Center</h2>
+                    <p style="font-size:13px; color:var(--text-3); margin-top:2px;">Broadcast official notices, urgent sports bulletins, and updates to athletes, coaches, and university staff</p>
+                </div>
+                <div style="margin-left: auto; flex-shrink: 0;">
+                    <button class="btn btn-teal" onclick="openModal('composeModal')" style="display:flex; align-items:center; gap:6px; padding:9px 18px; font-size:13.5px; font-weight:600;">
+                        <span class="material-symbols-outlined" style="font-size:18px;">add_circle</span>
+                        Broadcast Announcement
+                    </button>
+                </div>
             </div>
 
-            <!-- Compose + Action -->
-            <div class="grid-2">
+            <!-- Stats Bar -->
+            <div class="grid-4" style="margin-bottom:20px;">
                 <div class="stat-card">
                     <div>
-                        <div class="stat-label">Total Sent</div>
-                        <div class="stat-value">28</div>
+                        <div class="stat-label">Active Broadcasts</div>
+                        <div class="stat-value" style="color:var(--teal);"><?= $stats['active'] ?></div>
                     </div>
-                    <div class="stat-icon">
+                    <div class="stat-icon" style="color:var(--teal);">
                         <span class="material-symbols-outlined">campaign</span>
                     </div>
                 </div>
-                <button class="action-card" onclick="openModal('composeModal')">
-                    <div class="action-card-icon">
-                        <span class="material-symbols-outlined">add</span>
-                    </div>
+
+                <div class="stat-card">
                     <div>
-                        <div class="action-card-title">New Announcement</div>
-                        <div class="action-card-desc">Broadcast a new notice</div>
+                        <div class="stat-label">Urgent Bulletins</div>
+                        <div class="stat-value" style="color:var(--danger);"><?= $stats['urgent'] ?></div>
                     </div>
-                </button>
-            </div>
-
-            <!-- Toolbar -->
-            <div class="toolbar">
-                <div class="tab-group">
-                    <button class="tab-btn active" onclick="filterTab('all', this)">All</button>
-                    <button class="tab-btn" onclick="filterTab('active', this)">Active</button>
-                    <button class="tab-btn" onclick="filterTab('archived', this)">Archived</button>
-                </div>
-                <div class="search-box">
-                    <span class="material-symbols-outlined">search</span>
-                    <input type="text" class="search-input" placeholder="Search announcements..." oninput="searchTable(this.value)">
-                </div>
-            </div>
-
-            <!-- Announcements Table -->
-            <div class="table-card">
-                <div class="table-scroll">
-                    <table class="data-table" id="announcementsTable">
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Target Audience</th>
-                                <th>Message</th>
-                                <th>Status</th>
-                                <th style="text-align: right;">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tableBody">
-                            <tr data-status="active">
-                                <td>Aug 20, 2026<br><span class="cell-sub">09:15 AM</span></td>
-                                <td><span class="badge badge-info">ALL USERS</span></td>
-                                <td>
-                                    <span class="cell-main">Season kickoff meeting scheduled for next Friday</span>
-                                    <span class="cell-sub">All varsity athletes must attend at the Main Gymnasium.</span>
-                                </td>
-                                <td><span class="badge badge-ok">Active</span></td>
-                                <td class="cell-actions">
-                                    <button class="btn btn-sm btn-outline" onclick="viewAnnouncement(0)">
-                                        <span class="material-symbols-outlined" style="font-size:16px;">visibility</span> View
-                                    </button>
-                                    <button class="btn btn-sm btn-danger" onclick="deleteRow(this)">
-                                        <span class="material-symbols-outlined" style="font-size:16px;">delete</span>
-                                    </button>
-                                </td>
-                            </tr>
-
-                            <tr data-status="active">
-                                <td>Aug 19, 2026<br><span class="cell-sub">02:30 PM</span></td>
-                                <td><span class="badge badge-purple">MEDICAL STAFF</span></td>
-                                <td>
-                                    <span class="cell-main">Updated protocols for court-side injury triage</span>
-                                    <span class="cell-sub">Please review the updated clearance workflow before Friday.</span>
-                                </td>
-                                <td><span class="badge badge-ok">Active</span></td>
-                                <td class="cell-actions">
-                                    <button class="btn btn-sm btn-outline" onclick="viewAnnouncement(1)">
-                                        <span class="material-symbols-outlined" style="font-size:16px;">visibility</span> View
-                                    </button>
-                                    <button class="btn btn-sm btn-danger" onclick="deleteRow(this)">
-                                        <span class="material-symbols-outlined" style="font-size:16px;">delete</span>
-                                    </button>
-                                </td>
-                            </tr>
-
-                            <tr data-status="active">
-                                <td>Aug 18, 2026<br><span class="cell-sub">06:00 PM</span></td>
-                                <td><span class="badge badge-danger">URGENT</span></td>
-                                <td>
-                                    <span class="cell-main">Practice courts 3 and 4 are closed for maintenance</span>
-                                    <span class="cell-sub">Court resurfacing underway until Tuesday morning. Use Court 1.</span>
-                                </td>
-                                <td><span class="badge badge-warn">Urgent</span></td>
-                                <td class="cell-actions">
-                                    <button class="btn btn-sm btn-outline" onclick="viewAnnouncement(2)">
-                                        <span class="material-symbols-outlined" style="font-size:16px;">visibility</span> View
-                                    </button>
-                                    <button class="btn btn-sm btn-danger" onclick="deleteRow(this)">
-                                        <span class="material-symbols-outlined" style="font-size:16px;">delete</span>
-                                    </button>
-                                </td>
-                            </tr>
-
-                            <tr data-status="archived">
-                                <td>Aug 15, 2026<br><span class="cell-sub">11:20 AM</span></td>
-                                <td><span class="badge badge-info">ALL ATHLETES</span></td>
-                                <td>
-                                    <span class="cell-main">Annual Colors Night nominations are now open</span>
-                                    <span class="cell-sub">Submit nominations through the Sports Council portal by Aug 30.</span>
-                                </td>
-                                <td><span class="badge">Archived</span></td>
-                                <td class="cell-actions">
-                                    <button class="btn btn-sm btn-outline" onclick="viewAnnouncement(3)">
-                                        <span class="material-symbols-outlined" style="font-size:16px;">visibility</span> View
-                                    </button>
-                                    <button class="btn btn-sm btn-danger" onclick="deleteRow(this)">
-                                        <span class="material-symbols-outlined" style="font-size:16px;">delete</span>
-                                    </button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <div class="stat-icon" style="color:var(--danger);">
+                        <span class="material-symbols-outlined">emergency</span>
+                    </div>
                 </div>
 
-                <!-- Pagination -->
-                <div class="pagination">
-                    <span>Showing 1–4 of 28</span>
-                    <div class="page-btns">
-                        <button class="page-btn" disabled><span class="material-symbols-outlined">chevron_left</span></button>
-                        <button class="page-btn active">1</button>
-                        <button class="page-btn">2</button>
-                        <button class="page-btn"><span class="material-symbols-outlined">chevron_right</span></button>
+                <div class="stat-card">
+                    <div>
+                        <div class="stat-label">Archived Notices</div>
+                        <div class="stat-value" style="color:var(--text-3);"><?= $stats['archived'] ?></div>
+                    </div>
+                    <div class="stat-icon" style="color:var(--text-3);">
+                        <span class="material-symbols-outlined">inventory_2</span>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div>
+                        <div class="stat-label">Total Published</div>
+                        <div class="stat-value" style="color:var(--text-1);"><?= $stats['total'] ?></div>
+                    </div>
+                    <div class="stat-icon" style="color:var(--text-2);">
+                        <span class="material-symbols-outlined">history_edu</span>
                     </div>
                 </div>
             </div>
 
-        </div>
-    </div>
-
-    <!-- ========================================
-         MODAL: Compose New Announcement
-         ======================================== -->
-    <div class="modal-overlay" id="composeModal" onclick="if(event.target===this)closeModal('composeModal')">
-        <div class="modal" style="width: 520px;">
-            <form onsubmit="sendAnnouncement(event)">
-                <div class="modal-header">
-                    <h3 class="modal-title">New Announcement</h3>
-                    <button type="button" class="modal-close" onclick="closeModal('composeModal')">
-                        <span class="material-symbols-outlined">close</span>
+            <!-- Filter & Search Toolbar -->
+            <div class="toolbar" style="margin-bottom:16px;">
+                <div class="tab-group" id="filterTabs">
+                    <button class="tab-btn active" onclick="setFeedFilter('all', this)">
+                        All Notices <span class="tab-counter" id="cntAll"><?= count($announcements) ?></span>
+                    </button>
+                    <button class="tab-btn" onclick="setFeedFilter('Active', this)">
+                        Active <span class="tab-counter"><?= $stats['active'] ?></span>
+                    </button>
+                    <button class="tab-btn" onclick="setFeedFilter('Urgent', this)">
+                        Urgent <span class="tab-counter critical"><?= $stats['urgent'] ?></span>
+                    </button>
+                    <button class="tab-btn" onclick="setFeedFilter('Archived', this)">
+                        Archived <span class="tab-counter"><?= $stats['archived'] ?></span>
                     </button>
                 </div>
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label class="form-label">Target Audience</label>
-                        <select class="form-select" id="cAudience">
+
+                <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                    <div style="min-width:180px;">
+                        <select class="form-select" id="audienceFilter" onchange="applyFilters()" style="padding:7px 10px; font-size:13px; height:38px; border:1.5px solid #CBD5E1;">
+                            <option value="">All Target Audiences</option>
                             <option value="All Users">All Users</option>
-                            <option value="All Athletes">All Athletes</option>
-                            <option value="Coaches">Coaches & Staff</option>
-                            <option value="TIC">Teachers in Charge</option>
-                            <option value="Medical Staff">Medical Officers</option>
+                            <option value="Student Athletes">Student Athletes</option>
+                            <option value="Coaches & Staff">Coaches & Staff</option>
+                            <option value="Medical Staff">Medical Staff</option>
+                            <option value="TIC">TIC</option>
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Message</label>
-                        <textarea class="form-textarea" id="cMessage" rows="4" placeholder="Type your announcement here..." required></textarea>
+                    <div class="search-box" style="width:260px;">
+                        <span class="material-symbols-outlined">search</span>
+                        <input type="text" class="search-input" id="searchFeed" placeholder="Search notices, title, content…" oninput="applyFilters()">
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Priority</label>
-                        <div style="display: flex; gap: 16px; margin-top: 4px;">
-                            <label style="display: flex; align-items: center; gap: 6px; font-size: 14px; cursor: pointer;">
-                                <input type="radio" name="priority" value="Standard" checked style="accent-color: var(--accent-dark);"> Standard Notice
-                            </label>
-                            <label style="display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--danger); cursor: pointer;">
-                                <input type="radio" name="priority" value="Urgent" style="accent-color: var(--danger);"> Urgent
-                            </label>
+                </div>
+            </div>
+
+            <!-- Feed Status / Counter -->
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <div style="font-size:13px; color:var(--text-3); font-weight:600;" id="feedCountText">
+                    Showing <?= count($announcements) ?> announcements
+                </div>
+            </div>
+
+            <!-- Announcement Card Grid -->
+            <div class="announcement-grid" id="announcementGrid">
+                <?php if (empty($announcements)): ?>
+                    <div style="grid-column: 1 / -1; background:#FFFFFF; border:1px solid var(--border); border-radius:10px; padding:48px 24px; text-align:center;">
+                        <span class="material-symbols-outlined" style="font-size:48px; color:var(--text-3); margin-bottom:8px;">campaign</span>
+                        <h3 style="font-size:16px; color:var(--text-1); margin-bottom:4px;">No Announcements Found</h3>
+                        <p style="font-size:13px; color:var(--text-3); max-width:400px; margin:0 auto 16px auto;">There are currently no official announcements published. Click below to compose your first notice.</p>
+                        <button class="btn btn-teal btn-sm" onclick="openModal('composeModal')">Broadcast Announcement</button>
+                    </div>
+                <?php else: ?>
+                    <?php foreach ($announcements as $ann): 
+                        $priorityClass = 'priority-' . strtolower($ann['priority']);
+                        $statusClass = 'status-' . strtolower($ann['status']);
+                        
+                        $badgeClass = 'badge-normal';
+                        $priorityIcon = 'campaign';
+                        if ($ann['priority'] === 'Urgent') {
+                            $badgeClass = 'badge-urgent';
+                            $priorityIcon = 'emergency';
+                        } elseif ($ann['priority'] === 'Important') {
+                            $badgeClass = 'badge-important';
+                            $priorityIcon = 'announcement';
+                        }
+
+                        $dateDisplay = date('M d, Y · h:i A', strtotime($ann['created_at']));
+                    ?>
+                        <div class="announcement-card <?= $priorityClass ?> <?= $statusClass ?>"
+                             data-status="<?= htmlspecialchars($ann['status']) ?>"
+                             data-priority="<?= htmlspecialchars($ann['priority']) ?>"
+                             data-audience="<?= htmlspecialchars($ann['target_audience']) ?>"
+                             data-title="<?= htmlspecialchars(strtolower($ann['title'])) ?>"
+                             data-content="<?= htmlspecialchars(strtolower($ann['content'])) ?>">
+                            
+                            <!-- Card Header -->
+                            <div class="announcement-card-header">
+                                <div style="display:flex; align-items:center; gap:6px;">
+                                    <span class="badge-audience">
+                                        <span class="material-symbols-outlined" style="font-size:13px;">group</span>
+                                        <?= htmlspecialchars($ann['target_audience']) ?>
+                                    </span>
+                                    <?php if ($ann['status'] === 'Active'): ?>
+                                        <span class="badge badge-ok" style="font-size:10.5px; padding:2px 7px;">Active</span>
+                                    <?php else: ?>
+                                        <span class="badge badge-gray" style="font-size:10.5px; padding:2px 7px;">Archived</span>
+                                    <?php endif; ?>
+                                </div>
+                                <span class="<?= $badgeClass ?>">
+                                    <span class="material-symbols-outlined" style="font-size:13px;"><?= $priorityIcon ?></span>
+                                    <?= htmlspecialchars($ann['priority']) ?>
+                                </span>
+                            </div>
+
+                            <!-- Card Body -->
+                            <div class="announcement-card-body">
+                                <div class="announcement-title">
+                                    <?= htmlspecialchars($ann['title']) ?>
+                                </div>
+                                <div class="announcement-content-text"><?= nl2br(htmlspecialchars(trim($ann['content']))) ?></div>
+
+                                <div class="announcement-meta">
+                                    <div style="display:flex; align-items:center; gap:4px;">
+                                        <span class="material-symbols-outlined" style="font-size:14px; color:var(--text-3);">schedule</span>
+                                        <span><?= $dateDisplay ?></span>
+                                    </div>
+                                    <div style="font-weight:600; color:var(--text-2);">
+                                        By <?= htmlspecialchars($ann['publisher_name']) ?>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Card Footer / Actions -->
+                            <div class="announcement-card-footer">
+                                <!-- Status Toggle Form -->
+                                <form action="../controllers/PresidentController.php?action=toggle_status" method="POST" style="display:inline;"
+                                      onsubmit="return USMS.confirmForm(this, {
+                                          title: '<?= ($ann['status'] === 'Active') ? 'Archive Notice' : 'Reactivate Notice' ?>',
+                                          message: 'Are you sure you want to mark this notice as <?= ($ann['status'] === 'Active') ? 'Archived' : 'Active' ?>?',
+                                          type: 'teal',
+                                          confirmText: 'Confirm'
+                                      });">
+                                    <input type="hidden" name="announcement_id" value="<?= (int)$ann['announcement_id'] ?>">
+                                    <button type="submit" class="btn btn-outline btn-sm" style="font-size:11.5px; padding:3px 8px;" title="Toggle active status">
+                                        <span class="material-symbols-outlined" style="font-size:14px;">
+                                            <?= ($ann['status'] === 'Active') ? 'archive' : 'unarchive' ?>
+                                        </span>
+                                        <?= ($ann['status'] === 'Active') ? 'Archive' : 'Activate' ?>
+                                    </button>
+                                </form>
+
+                                <!-- Action Buttons -->
+                                <div class="announcement-actions">
+                                    <button type="button" class="btn btn-outline btn-sm" style="padding:4px 8px;" onclick="openViewModal(<?= htmlspecialchars(json_encode($ann)) ?>)" title="View Announcement">
+                                        <span class="material-symbols-outlined" style="font-size:15px;">visibility</span>
+                                    </button>
+                                    <button type="button" class="btn btn-outline btn-sm" style="padding:4px 8px;" onclick="openEditModal(<?= htmlspecialchars(json_encode($ann)) ?>)" title="Edit Announcement">
+                                        <span class="material-symbols-outlined" style="font-size:15px; color:var(--teal);">edit</span>
+                                    </button>
+                                    <form action="../controllers/PresidentController.php?action=delete_announcement" method="POST" style="display:inline;"
+                                          onsubmit="return USMS.confirmForm(this, {
+                                              title: 'Delete Announcement',
+                                              message: 'Are you sure you want to permanently delete this announcement? It will be removed immediately from all user notifications.',
+                                              type: 'danger',
+                                              confirmText: 'Yes, Delete'
+                                          });">
+                                        <input type="hidden" name="announcement_id" value="<?= (int)$ann['announcement_id'] ?>">
+                                        <button type="submit" class="btn btn-danger btn-sm" style="padding:4px 8px;" title="Delete Announcement">
+                                            <span class="material-symbols-outlined" style="font-size:15px;">delete</span>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+
                         </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
+
+            <!-- Empty Search Results Placeholder (hidden by default) -->
+            <div id="noMatchState" style="display:none; background:#FFFFFF; border:1px solid var(--border); border-radius:10px; padding:40px 20px; text-align:center; margin-top:20px;">
+                <span class="material-symbols-outlined" style="font-size:42px; color:var(--text-3); margin-bottom:8px;">search_off</span>
+                <h3 style="font-size:15px; color:var(--text-1); margin-bottom:4px;">No matching announcements found</h3>
+                <p style="font-size:13px; color:var(--text-3);">Try adjusting your search query or audience filter.</p>
+            </div>
+
+        </div><!-- .page-content -->
+    </div><!-- .main-wrapper -->
+
+    <!-- ===== MODAL 1: COMPOSE ANNOUNCEMENT ===== -->
+    <div class="modal-overlay" id="composeModal">
+        <div class="modal" style="max-width:620px;">
+            <div class="modal-header">
+                <div>
+                    <span class="modal-title">Broadcast Official Announcement</span>
+                    <p style="font-size:12px; color:var(--text-3); margin-top:2px;">Publish notice to athlete portals, coaching staff, and university notifications</p>
+                </div>
+                <button class="modal-close" onclick="closeModal('composeModal')">&times;</button>
+            </div>
+            <form action="../controllers/PresidentController.php?action=create_announcement" method="POST"
+                  onsubmit="return USMS.confirmForm(this, {
+                      title: 'Publish Announcement',
+                      message: 'Are you sure you want to broadcast this announcement across the university sports network?',
+                      type: 'teal',
+                      confirmText: 'Broadcast Notice'
+                  });">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label">Announcement Title <span style="color:var(--danger)">*</span></label>
+                        <input type="text" name="title" class="form-input" placeholder="e.g., Inter-Faculty Track & Field Trials 2026" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Target Audience <span style="color:var(--danger)">*</span></label>
+                            <select name="target_audience" class="form-select" required>
+                                <option value="All Users" selected>All Users (Campus-Wide)</option>
+                                <option value="Student Athletes">Student Athletes</option>
+                                <option value="Coaches & Staff">Coaches & Staff</option>
+                                <option value="Medical Staff">Medical Staff</option>
+                                <option value="TIC">TIC (Teachers-in-Charge)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Priority Level <span style="color:var(--danger)">*</span></label>
+                            <select name="priority" class="form-select" required>
+                                <option value="Normal" selected>Normal</option>
+                                <option value="Important">Important</option>
+                                <option value="Urgent">Urgent (Emergency Alert)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Initial Status</label>
+                        <select name="status" class="form-select">
+                            <option value="Active" selected>Active (Broadcast Immediately)</option>
+                            <option value="Archived">Archived (Draft / Save for later)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Announcement Content / Message Body <span style="color:var(--danger)">*</span></label>
+                        <textarea name="content" class="form-textarea" rows="5" placeholder="Write full details, scheduling information, venue, instructions, or deadlines..." required></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline" onclick="closeModal('composeModal')">Cancel</button>
-                    <button type="submit" class="btn btn-primary">
-                        <span class="material-symbols-outlined" style="font-size: 16px;">send</span> Send Broadcast
+                    <button type="submit" class="btn btn-teal">
+                        <span class="material-symbols-outlined" style="font-size:16px;">send</span>
+                        Publish Broadcast
                     </button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- ========================================
-         MODAL: View Announcement Detail
-         ======================================== -->
-    <div class="modal-overlay" id="viewModal" onclick="if(event.target===this)closeModal('viewModal')">
-        <div class="modal" style="width: 500px;">
+    <!-- ===== MODAL 2: EDIT ANNOUNCEMENT ===== -->
+    <div class="modal-overlay" id="editModal">
+        <div class="modal" style="max-width:620px;">
             <div class="modal-header">
-                <h3 class="modal-title">Announcement Detail</h3>
-                <button class="modal-close" onclick="closeModal('viewModal')">
-                    <span class="material-symbols-outlined">close</span>
-                </button>
+                <div>
+                    <span class="modal-title">Edit Announcement</span>
+                    <p style="font-size:12px; color:var(--text-3); margin-top:2px;">Modify announcement content, audience, or priority level</p>
+                </div>
+                <button class="modal-close" onclick="closeModal('editModal')">&times;</button>
+            </div>
+            <form action="../controllers/PresidentController.php?action=update_announcement" method="POST"
+                  onsubmit="return USMS.confirmForm(this, {
+                      title: 'Update Announcement',
+                      message: 'Save changes and synchronize updates to the notification broadcast feed?',
+                      type: 'teal',
+                      confirmText: 'Save Changes'
+                  });">
+                <input type="hidden" name="announcement_id" id="editId">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label">Announcement Title <span style="color:var(--danger)">*</span></label>
+                        <input type="text" name="title" id="editTitle" class="form-input" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Target Audience <span style="color:var(--danger)">*</span></label>
+                            <select name="target_audience" id="editAudience" class="form-select" required>
+                                <option value="All Users">All Users (Campus-Wide)</option>
+                                <option value="Student Athletes">Student Athletes</option>
+                                <option value="Coaches & Staff">Coaches & Staff</option>
+                                <option value="Medical Staff">Medical Staff</option>
+                                <option value="TIC">TIC (Teachers-in-Charge)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Priority Level <span style="color:var(--danger)">*</span></label>
+                            <select name="priority" id="editPriority" class="form-select" required>
+                                <option value="Normal">Normal</option>
+                                <option value="Important">Important</option>
+                                <option value="Urgent">Urgent (Emergency Alert)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Publication Status</label>
+                        <select name="status" id="editStatus" class="form-select">
+                            <option value="Active">Active</option>
+                            <option value="Archived">Archived</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Message Content <span style="color:var(--danger)">*</span></label>
+                        <textarea name="content" id="editContent" class="form-textarea" rows="5" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('editModal')">Cancel</button>
+                    <button type="submit" class="btn btn-teal">
+                        <span class="material-symbols-outlined" style="font-size:16px;">save</span>
+                        Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===== MODAL 3: VIEW ANNOUNCEMENT FULL READER ===== -->
+    <div class="modal-overlay" id="viewModal">
+        <div class="modal" style="max-width:620px;">
+            <div class="modal-header">
+                <div>
+                    <span class="modal-title" id="viewModalTitle">Announcement Details</span>
+                    <p style="font-size:12px; color:var(--text-3); margin-top:2px;" id="viewModalDate">Published Date</p>
+                </div>
+                <button class="modal-close" onclick="closeModal('viewModal')">&times;</button>
             </div>
             <div class="modal-body">
-                <div class="form-group">
-                    <label class="form-label">Target Audience</label>
-                    <p id="vAudience" style="color: var(--text); font-weight: 600;">—</p>
+                <div style="display:flex; gap:8px; align-items:center; margin-bottom:14px;">
+                    <span id="viewPriorityBadge" class="badge-normal">Normal</span>
+                    <span id="viewAudienceBadge" class="badge-audience">All Users</span>
+                    <span id="viewStatusBadge" class="badge badge-ok">Active</span>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Message</label>
-                    <p id="vMessage" style="color: var(--text); line-height: 1.6; white-space: pre-wrap;">—</p>
+
+                <div style="background:#F8FAFC; border:1px solid var(--border); border-radius:8px; padding:14px 16px; margin-bottom:14px;">
+                    <h4 style="font-size:15px; color:var(--text-1); margin-bottom:8px; line-height:1.4;" id="viewTitle">Notice Title</h4>
+                    <div style="font-size:13.5px; color:var(--text-2); line-height:1.6; white-space:pre-wrap;" id="viewContent">Content body...</div>
                 </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">Status</label>
-                        <p id="vStatus" style="color: var(--text); font-weight: 600;">—</p>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Date Sent</label>
-                        <p id="vDate" style="color: var(--text-2);">—</p>
-                    </div>
+
+                <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; color:var(--text-3); padding:0 4px;">
+                    <span id="viewAuthor">Published by: Student President</span>
+                    <span>University Sports Management System</span>
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-outline" onclick="closeModal('viewModal')">Close</button>
+                <button type="button" class="btn btn-outline" onclick="closeModal('viewModal')">Close</button>
             </div>
         </div>
     </div>
 
+    <script src="../assets/js/dashboard.js"></script>
     <script>
-        // Announcement data (placeholder – will come from DB)
-        const announcements = [
-            { audience: 'All Users', message: 'Season kickoff meeting scheduled for next Friday at the Main Gymnasium. All varsity athletes must attend. Physical clearance certificates will be verified at the entrance.', status: 'Active', date: 'Aug 20, 2026 — 09:15 AM' },
-            { audience: 'Medical Staff', message: 'Updated protocols for court-side injury triage have been uploaded. Please review the updated clearance workflow and submit clearance logs before Friday.', status: 'Active', date: 'Aug 19, 2026 — 02:30 PM' },
-            { audience: 'Urgent — Specific Teams', message: 'Practice courts 3 and 4 are closed immediately due to court resurfacing until Tuesday morning. Training sessions are temporarily moved to Court 1.', status: 'Urgent', date: 'Aug 18, 2026 — 06:00 PM' },
-            { audience: 'All Athletes', message: 'Nominations for University Colors and Special Athletic Achievements are now open through the Sports Council portal. Deadline is Aug 30.', status: 'Archived', date: 'Aug 15, 2026 — 11:20 AM' }
-        ];
+        var currentStatusFilter = 'all';
 
-        // Modal helpers
-        function openModal(id) {
-            document.getElementById(id).classList.add('show');
-        }
-        function closeModal(id) {
-            document.getElementById(id).classList.remove('show');
+        function setFeedFilter(status, btn) {
+            currentStatusFilter = status;
+            var buttons = document.querySelectorAll('#filterTabs .tab-btn');
+            buttons.forEach(function(b) { b.classList.remove('active'); });
+            if (btn) btn.classList.add('active');
+            applyFilters();
         }
 
-        // View announcement detail
-        function viewAnnouncement(idx) {
-            const a = announcements[idx];
-            document.getElementById('vAudience').textContent = a.audience;
-            document.getElementById('vMessage').textContent = a.message;
-            document.getElementById('vStatus').textContent = a.status;
-            document.getElementById('vDate').textContent = a.date;
-            openModal('viewModal');
-        }
+        function applyFilters() {
+            var searchVal = (document.getElementById('searchFeed').value || '').trim().toLowerCase();
+            var audienceVal = document.getElementById('audienceFilter').value;
+            var cards = document.querySelectorAll('.announcement-card');
+            var matchCount = 0;
 
-        // Send new announcement
-        function sendAnnouncement(e) {
-            e.preventDefault();
-            const audience = document.getElementById('cAudience').value;
-            const message = document.getElementById('cMessage').value.trim();
-            const priority = document.querySelector('input[name="priority"]:checked').value;
+            cards.forEach(function(card) {
+                var cardStatus = card.getAttribute('data-status');
+                var cardPriority = card.getAttribute('data-priority');
+                var cardAudience = card.getAttribute('data-audience');
+                var cardTitle = card.getAttribute('data-title') || '';
+                var cardContent = card.getAttribute('data-content') || '';
 
-            if (!message) return;
+                // Tab Status Filter
+                var matchesTab = false;
+                if (currentStatusFilter === 'all') {
+                    matchesTab = true;
+                } else if (currentStatusFilter === 'Active' && cardStatus === 'Active') {
+                    matchesTab = true;
+                } else if (currentStatusFilter === 'Urgent' && cardPriority === 'Urgent') {
+                    matchesTab = true;
+                } else if (currentStatusFilter === 'Archived' && cardStatus === 'Archived') {
+                    matchesTab = true;
+                }
 
-            // Add to table
-            const tbody = document.getElementById('tableBody');
-            const tr = document.createElement('tr');
-            tr.setAttribute('data-status', 'active');
+                // Audience Filter
+                var matchesAudience = (!audienceVal || cardAudience === audienceVal);
 
-            const now = new Date();
-            const dateStr = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-            const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                // Search Filter
+                var matchesSearch = true;
+                if (searchVal) {
+                    matchesSearch = (cardTitle.indexOf(searchVal) !== -1 || cardContent.indexOf(searchVal) !== -1 || cardAudience.toLowerCase().indexOf(searchVal) !== -1);
+                }
 
-            const badgeClass = priority === 'Urgent' ? 'badge-danger' : 'badge-info';
-            const badgeText = priority === 'Urgent' ? 'URGENT' : audience.toUpperCase();
-            const statusBadge = priority === 'Urgent' ? '<span class="badge badge-warn">Urgent</span>' : '<span class="badge badge-ok">Active</span>';
-            const preview = message.length > 70 ? message.substring(0, 70) + '...' : message;
+                if (matchesTab && matchesAudience && matchesSearch) {
+                    card.style.display = 'flex';
+                    matchCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
 
-            const newIdx = announcements.length;
-            announcements.push({ audience: audience, message: message, status: priority === 'Urgent' ? 'Urgent' : 'Active', date: dateStr + ' — ' + timeStr });
+            // Update Feed Count
+            var countEl = document.getElementById('feedCountText');
+            if (countEl) {
+                countEl.textContent = 'Showing ' + matchCount + ' of ' + cards.length + ' announcements';
+            }
 
-            tr.innerHTML = `
-                <td>${dateStr}<br><span class="cell-sub">${timeStr}</span></td>
-                <td><span class="badge ${badgeClass}">${badgeText}</span></td>
-                <td>
-                    <span class="cell-main">${escapeHtml(preview)}</span>
-                </td>
-                <td>${statusBadge}</td>
-                <td class="cell-actions">
-                    <button class="btn btn-sm btn-outline" onclick="viewAnnouncement(${newIdx})">
-                        <span class="material-symbols-outlined" style="font-size:16px;">visibility</span> View
-                    </button>
-                    <button class="btn btn-sm btn-danger" onclick="deleteRow(this)">
-                        <span class="material-symbols-outlined" style="font-size:16px;">delete</span>
-                    </button>
-                </td>
-            `;
-            tbody.insertBefore(tr, tbody.firstChild);
-
-            // Reset & close
-            document.getElementById('cMessage').value = '';
-            closeModal('composeModal');
-        }
-
-        // Delete row
-        function deleteRow(btn) {
-            if (confirm('Delete this announcement?')) {
-                btn.closest('tr').remove();
+            // No match placeholder
+            var noMatchEl = document.getElementById('noMatchState');
+            if (noMatchEl) {
+                noMatchEl.style.display = (matchCount === 0 && cards.length > 0) ? 'block' : 'none';
             }
         }
 
-        // Search table
-        function searchTable(q) {
-            q = q.toLowerCase();
-            document.querySelectorAll('#tableBody tr').forEach(r => {
-                r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none';
-            });
+        function openEditModal(ann) {
+            document.getElementById('editId').value = ann.announcement_id;
+            document.getElementById('editTitle').value = ann.title;
+            document.getElementById('editAudience').value = ann.target_audience;
+            document.getElementById('editPriority').value = ann.priority;
+            document.getElementById('editStatus').value = ann.status;
+            document.getElementById('editContent').value = ann.content;
+            openModal('editModal');
         }
 
-        // Filter tabs
-        function filterTab(status, btn) {
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
+        function openViewModal(ann) {
+            document.getElementById('viewModalTitle').textContent = ann.title;
+            document.getElementById('viewModalDate').textContent = 'Broadcasted on ' + ann.created_at;
+            document.getElementById('viewTitle').textContent = ann.title;
+            document.getElementById('viewContent').textContent = ann.content;
+            document.getElementById('viewAuthor').textContent = 'Published by: ' + (ann.publisher_name || 'Student President');
+            
+            var pBadge = document.getElementById('viewPriorityBadge');
+            pBadge.textContent = ann.priority;
+            pBadge.className = (ann.priority === 'Urgent' ? 'badge-urgent' : (ann.priority === 'Important' ? 'badge-important' : 'badge-normal'));
 
-            document.querySelectorAll('#tableBody tr').forEach(r => {
-                if (status === 'all') {
-                    r.style.display = '';
-                } else {
-                    r.style.display = r.dataset.status === status ? '' : 'none';
-                }
-            });
-        }
+            document.getElementById('viewAudienceBadge').textContent = ann.target_audience;
+            
+            var sBadge = document.getElementById('viewStatusBadge');
+            sBadge.textContent = ann.status;
+            sBadge.className = 'badge ' + (ann.status === 'Active' ? 'badge-ok' : 'badge-gray');
 
-        function escapeHtml(s) {
-            return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+            openModal('viewModal');
         }
     </script>
 </body>

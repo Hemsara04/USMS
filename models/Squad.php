@@ -24,6 +24,7 @@ class Squad {
                 ms.tic_approval_status,
                 f.opponent,
                 f.fixture_type,
+                f.home_team,
                 f.fixture_date,
                 f.fixture_time,
                 s.sport_name,
@@ -53,6 +54,7 @@ class Squad {
                 f.fixture_id,
                 f.opponent,
                 f.fixture_type,
+                f.home_team,
                 f.fixture_date,
                 f.fixture_time,
                 s.sport_name,
@@ -79,6 +81,7 @@ class Squad {
                 f.fixture_id,
                 f.opponent,
                 f.fixture_type,
+                f.home_team,
                 f.fixture_date,
                 f.fixture_time,
                 s.sport_name,
@@ -90,7 +93,7 @@ class Squad {
             JOIN sports s ON f.sport_id = s.sport_id
             JOIN facilities fac ON f.facility_id = fac.facility_id
             JOIN match_squads ms ON f.fixture_id = ms.fixture_id
-            GROUP BY f.fixture_id, f.opponent, f.fixture_type, f.fixture_date, f.fixture_time, s.sport_name, fac.facility_name
+            GROUP BY f.fixture_id, f.opponent, f.fixture_type, f.home_team, f.fixture_date, f.fixture_time, s.sport_name, fac.facility_name
             HAVING pending_players > 0
             ORDER BY f.fixture_date ASC, f.fixture_time ASC
         ";
@@ -173,16 +176,17 @@ class Squad {
     /**
      * Add new fixture
      */
-    public function createFixture($sport_id, $facility_id, $opponent, $fixture_type, $fixture_date, $fixture_time) {
+    public function createFixture($sport_id, $facility_id, $opponent, $fixture_type, $fixture_date, $fixture_time, $home_team = 'University of Colombo') {
         $stmt = $this->db->prepare("
-            INSERT INTO fixtures (sport_id, facility_id, opponent, fixture_type, fixture_date, fixture_time)
-            VALUES (:sport_id, :facility_id, :opponent, :fixture_type, :fixture_date, :fixture_time)
+            INSERT INTO fixtures (sport_id, facility_id, opponent, fixture_type, home_team, fixture_date, fixture_time)
+            VALUES (:sport_id, :facility_id, :opponent, :fixture_type, :home_team, :fixture_date, :fixture_time)
         ");
         return $stmt->execute([
             ':sport_id'     => $sport_id,
-            ':facility_id'   => $facility_id,
+            ':facility_id'  => $facility_id,
             ':opponent'     => $opponent,
             ':fixture_type' => $fixture_type,
+            ':home_team'    => $home_team,
             ':fixture_date' => $fixture_date,
             ':fixture_time' => $fixture_time
         ]);

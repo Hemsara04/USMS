@@ -56,14 +56,223 @@ function switchTab(btnEl, groupName, contentId) {
     if (target) target.classList.add('active');
 }
 
-/* ---------- CONFIRM ACTION ---------- */
+/* ============================================
+   USMS IN-APP CONFIRMATION POPUP (NO BROWSER ALERTS)
+   ============================================ */
+window.USMS = window.USMS || {};
+
+USMS.confirm = function(options) {
+    return new Promise(function(resolve) {
+        options = options || {};
+        var title = options.title || 'Confirm Action';
+        var message = options.message || 'Are you sure you want to proceed?';
+        var confirmText = options.confirmText || 'Yes, Confirm';
+        var cancelText = options.cancelText || 'Cancel';
+        var type = options.type || 'teal'; // 'danger', 'warning', 'teal', 'primary'
+
+        var iconName = 'help_outline';
+        if (type === 'danger') iconName = 'delete';
+        else if (type === 'warning') iconName = 'warning';
+        else if (type === 'teal' || type === 'success') iconName = 'check_circle';
+
+        // Check if modal already in DOM
+        var overlay = document.getElementById('usmsGlobalConfirmModal');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'usmsGlobalConfirmModal';
+            overlay.className = 'usms-confirm-overlay';
+            document.body.appendChild(overlay);
+        }
+
+        var confirmBtnClass = 'btn-teal';
+        if (type === 'danger') confirmBtnClass = 'btn-danger';
+        else if (type === 'primary') confirmBtnClass = 'btn-primary';
+
+        overlay.innerHTML = 
+            '<div class="usms-confirm-card ' + type + '">' +
+                '<div class="usms-confirm-header">' +
+                    '<div class="usms-confirm-icon ' + type + '">' +
+                        '<span class="material-symbols-outlined">' + iconName + '</span>' +
+                    '</div>' +
+                    '<div class="usms-confirm-title">' + title + '</div>' +
+                '</div>' +
+                '<div class="usms-confirm-msg">' + message + '</div>' +
+                '<div class="usms-confirm-actions">' +
+                    '<button type="button" class="btn btn-outline" id="usmsConfirmCancelBtn">' + cancelText + '</button>' +
+                    '<button type="button" class="btn ' + confirmBtnClass + '" id="usmsConfirmOkBtn">' + confirmText + '</button>' +
+                '</div>' +
+            '</div>';
+
+        overlay.classList.add('active');
+
+        function cleanup(confirmed) {
+            overlay.classList.remove('active');
+            resolve(confirmed);
+        }
+
+        document.getElementById('usmsConfirmCancelBtn').onclick = function() {
+            cleanup(false);
+        };
+        document.getElementById('usmsConfirmOkBtn').onclick = function() {
+            cleanup(true);
+        };
+        overlay.onclick = function(e) {
+            if (e.target === overlay) cleanup(false);
+        };
+    });
+};
+
+USMS.confirmForm = function() {
+    var arg0 = arguments[0];
+    var arg1 = arguments[1];
+    var arg2 = arguments[2];
+    var arg3 = arguments[3];
+
+    var evt = null;
+    var targetEl = null;
+    var options = {};
+
+    // 1. Identify parameters
+    if (arg0 && typeof arg0.preventDefault === 'function') {
+        // arg0 is Event
+        evt = arg0;
+        targetEl = arg1;
+        if (typeof arg2 === 'string') {
+            options.message = arg2;
+            if (typeof arg3 === 'object' && arg3 !== null) {
+                Object.assign(options, arg3);
+            }
+        } else if (typeof arg2 === 'object' && arg2 !== null) {
+            Object.assign(options, arg2);
+        }
+    } else if (arg0 && (arg0.tagName || arg0.nodeType)) {
+        // arg0 is DOM Element (form or button)
+        targetEl = arg0;
+        if (typeof arg1 === 'string') {
+            options.message = arg1;
+            if (typeof arg2 === 'object' && arg2 !== null) {
+                Object.assign(options, arg2);
+            }
+        } else if (typeof arg1 === 'object' && arg1 !== null) {
+            Object.assign(options, arg1);
+        }
+    } else if (typeof arg0 === 'object' && arg0 !== null) {
+        Object.assign(options, arg0);
+    }
+
+    if (evt && typeof evt.preventDefault === 'function') {
+        evt.preventDefault();
+    }
+
+    // Resolve form element
+    var form = null;
+    if (targetEl) {
+        if (targetEl.tagName && targetEl.tagName.toUpperCase() === 'FORM') {
+            form = targetEl;
+        } else if (typeof targetEl.closest === 'function') {
+            form = targetEl.closest('form');
+        }
+    }
+
+    // If form has already been verified and approved, allow submit
+    if (form && form.dataset && form.dataset.usmsConfirmed === 'true') {
+        form.dataset.usmsConfirmed = '';
+        return true;
+    }
+
+    // Options sanitization
+    options.title = options.title || 'Confirm Action';
+    options.message = options.message || 'Are you sure you want to proceed?';
+
+    var lowerMsg = (options.message + ' ' + (options.title || '')).toLowerCase();
+    if (!options.type) {
+        if (lowerMsg.includes('delete') || lowerMsg.includes('remove') || lowerMsg.includes('reject') || lowerMsg.includes('cancel') || lowerMsg.includes('clear')) {
+            options.type = 'danger';
+            options.confirmText = options.confirmText || 'Yes, Delete';
+        } else if (lowerMsg.includes('return')) {
+            options.type = 'teal';
+            options.confirmText = options.confirmText || 'Yes, Mark Returned';
+        } else if (lowerMsg.includes('approve') || lowerMsg.includes('authorize') || lowerMsg.includes('broadcast') || lowerMsg.includes('publish') || lowerMsg.includes('save')) {
+            options.type = 'teal';
+            options.confirmText = options.confirmText || 'Yes, Confirm';
+        } else {
+            options.type = 'teal';
+            options.confirmText = options.confirmText || 'Confirm';
+        }
+    }
+
+    USMS.confirm(options).then(function(confirmed) {
+        if (confirmed) {
+            if (form) {
+                // If the element has a name and value (like a specific button), append hidden input
+                if (targetEl && targetEl !== form && targetEl.name && targetEl.value) {
+                    var hiddenInput = document.createElement('input');
+                    hiddenInput.type = 'hidden';
+                    hiddenInput.name = targetEl.name;
+                    hiddenInput.value = targetEl.value;
+                    form.appendChild(hiddenInput);
+                }
+                form.dataset.usmsConfirmed = 'true';
+                if (typeof HTMLFormElement.prototype.submit === 'function') {
+                    HTMLFormElement.prototype.submit.call(form);
+                } else {
+                    form.submit();
+                }
+            } else if (targetEl && targetEl.href) {
+                window.location.href = targetEl.href;
+            }
+        }
+    });
+
+    return false;
+};
+
+// Backwards compatibility
 function confirmAction(message) {
-    return confirm(message);
+    return USMS.confirm({ message: message });
 }
+
+/* ---------- HEADER DROPDOWNS (Notifications & Profile) ---------- */
+function toggleHeaderDropdown(menuId) {
+    var menu = document.getElementById(menuId);
+    if (!menu) return;
+    var isOpen = menu.classList.contains('active');
+
+    // Close all header dropdowns first
+    document.querySelectorAll('.header-dropdown-menu').forEach(function(m) {
+        m.classList.remove('active');
+    });
+
+    if (!isOpen) {
+        menu.classList.add('active');
+    }
+}
+
+/* Accordion toggle for Notification Dropdown items */
+function toggleNotifAccordion(item) {
+    var details = item.querySelector('.notif-expandable-content');
+    var arrow = item.querySelector('.notif-toggle-arrow');
+    if (!details) return;
+    var isOpen = details.style.display === 'block';
+    details.style.display = isOpen ? 'none' : 'block';
+    if (arrow) {
+        arrow.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+    }
+}
+
+// Close header dropdowns on outside click
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.header-dropdown-wrap')) {
+        document.querySelectorAll('.header-dropdown-menu.active').forEach(function(m) {
+            m.classList.remove('active');
+        });
+    }
+});
+
 
 /* ---------- SEARCHABLE SELECT DROPDOWN (PURE VANILLA JS) ---------- */
 function initSearchableSelects() {
-    var selects = document.querySelectorAll('select.searchable, select[data-searchable="true"]');
+    var selects = document.querySelectorAll('select.searchable, select.searchable-select, select[data-searchable="true"]');
     
     selects.forEach(function(sel) {
         if (sel.dataset.searchableInit === 'true') return;
@@ -135,7 +344,7 @@ function initSearchableSelects() {
             optionsContainer.replaceChildren();
             for (var i = 0; i < sel.options.length; i++) {
                 var opt = sel.options[i];
-                if (opt.disabled && opt.value === '') continue; // skip placeholder option in list
+                if (opt.value === '') continue; // skip placeholder option in list
 
                 var optDiv = document.createElement('div');
                 optDiv.className = 'searchable-select-option' + (opt.selected ? ' selected' : '');
@@ -169,6 +378,12 @@ function initSearchableSelects() {
 
         buildOptions();
         dropdown.appendChild(optionsContainer);
+
+        var hintDiv = document.createElement('div');
+        hintDiv.className = 'searchable-select-hint';
+        hintDiv.style.display = 'none';
+        dropdown.appendChild(hintDiv);
+
         wrap.appendChild(dropdown);
 
         function openDropdown() {
@@ -209,23 +424,43 @@ function initSearchableSelects() {
             }
         });
 
-        // Filter search
+        // Filter search: display max 5 items by default, search reveals all matching items
         function filterOptions(query) {
             var q = query.toLowerCase().trim();
             var itemElements = optionsContainer.querySelectorAll('.searchable-select-option');
+            var totalCount = itemElements.length;
             var matchCount = 0;
 
-            itemElements.forEach(function(item) {
-                var txt = item.textContent.toLowerCase();
-                if (txt.indexOf(q) > -1) {
-                    item.style.display = '';
-                    matchCount++;
+            if (q === '') {
+                var visibleCount = 0;
+                itemElements.forEach(function(item) {
+                    if (visibleCount < 5) {
+                        item.style.display = '';
+                        visibleCount++;
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+                noResults.style.display = 'none';
+                if (totalCount > 5) {
+                    hintDiv.textContent = 'Showing top 5 of ' + totalCount + ' items. Type to search all…';
+                    hintDiv.style.display = 'block';
                 } else {
-                    item.style.display = 'none';
+                    hintDiv.style.display = 'none';
                 }
-            });
-
-            noResults.style.display = matchCount === 0 ? 'block' : 'none';
+            } else {
+                itemElements.forEach(function(item) {
+                    var txt = item.textContent.toLowerCase();
+                    if (txt.indexOf(q) > -1) {
+                        item.style.display = '';
+                        matchCount++;
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+                noResults.style.display = matchCount === 0 ? 'block' : 'none';
+                hintDiv.style.display = 'none';
+            }
         }
 
         var ajaxDebounceTimer = null;
@@ -252,6 +487,16 @@ function initSearchableSelects() {
                                         var opt = document.createElement('option');
                                         opt.value = item.id;
                                         opt.text = item.name + (item.subtitle ? ' — ' + item.subtitle : '') + (item.faculty ? ' (' + item.faculty + ')' : '');
+                                        if (item.faculty) opt.dataset.faculty = item.faculty;
+                                        if (item.subtitle) opt.dataset.index = item.subtitle;
+                                        if (item.emergency_contact) opt.dataset.contact = item.emergency_contact;
+                                        if (item.blood_group) opt.dataset.blood = item.blood_group;
+                                        if (item.height) opt.dataset.height = item.height;
+                                        if (item.weight) opt.dataset.weight = item.weight;
+                                        if (item.medical_status) opt.dataset.status = item.medical_status;
+                                        if (item.allergies) opt.dataset.allergies = item.allergies;
+                                        if (item.medical_notes) opt.dataset.notes = item.medical_notes;
+                                        if (item.sports_list) opt.dataset.sports = item.sports_list;
                                         sel.appendChild(opt);
                                     }
                                 });
