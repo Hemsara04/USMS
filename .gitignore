@@ -1,2 +1,5 @@
 # Ignore the temporary AI data folder
 /temp folder for stich ai data/
+
+# Documentation and Interim Report files
+docs/
