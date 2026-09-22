@@ -16,6 +16,12 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
+-- Create and select the USMS database
+--
+CREATE DATABASE IF NOT EXISTS `USMS` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+USE `USMS`;
+
+--
 -- Table structure for table `Athletic`
 --
 
@@ -465,12 +471,14 @@ DROP TABLE IF EXISTS `sport_application`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `sport_application` (
-  `application_id` int(11) NOT NULL,
+  `application_id` int(11) NOT NULL AUTO_INCREMENT,
   `athletic_id` int(11) NOT NULL,
   `sport_id` int(11) NOT NULL,
   `season_id` int(11) NOT NULL,
-  `status` enum('Pending','Shortlisted','Approved','Rejected') NOT NULL,
-  `rejection_reason` text NOT NULL,
+  `status` enum('Pending','Shortlisted','Approved','Rejected') NOT NULL DEFAULT 'Pending',
+  `rejection_reason` text DEFAULT NULL,
+  `statement_of_interest` text DEFAULT NULL,
+  `applied_date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`application_id`),
   KEY `athletic_application` (`athletic_id`),
   KEY `sport_application` (`sport_id`),

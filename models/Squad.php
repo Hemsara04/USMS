@@ -236,7 +236,7 @@ class Squad {
                 SELECT DISTINCT a.athlete_id, a.full_name, a.index_number, a.faculty,
                        (CASE WHEN sa.sport_id IS NOT NULL THEN 1 ELSE 0 END) AS is_registered_for_sport
                 FROM Athletic a
-                LEFT JOIN sport_application sa ON a.athlete_id = sa.athlete_id AND sa.sport_id = :sid
+                LEFT JOIN sport_application sa ON a.athlete_id = sa.athletic_id AND sa.sport_id = :sid
                 ORDER BY is_registered_for_sport DESC, a.full_name ASC
             ";
             $stmt = $this->db->prepare($sql);

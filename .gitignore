@@ -1,2 +1,4 @@
 # Ignore the temporary AI data folder
 /temp folder for stich ai data/
+.DS_Store
+*/.DS_Store

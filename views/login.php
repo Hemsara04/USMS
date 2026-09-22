@@ -128,7 +128,7 @@ unset($_SESSION['error'], $_SESSION['success']);
 
                 <!-- Footer Link to Registration -->
                 <div class="auth-footer">
-                    Don't have an account? <a href="register.php" class="auth-link">Register here</a>
+                    Don't have an account? <a href="register.php" id="register-link" class="auth-link">Register here</a>
                 </div>
 
             </div>
@@ -148,6 +148,25 @@ unset($_SESSION['error'], $_SESSION['success']);
             : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
         btn.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
     }
+
+    // Role-based Registration Link Update
+    document.addEventListener('DOMContentLoaded', function() {
+        const roleSelect = document.getElementById('role');
+        const registerLink = document.getElementById('register-link');
+        
+        if (roleSelect && registerLink) {
+            roleSelect.addEventListener('change', function() {
+                if (this.value === 'athlete') {
+                    registerLink.href = 'athletic_regestration.php';
+                } else {
+                    registerLink.href = 'register.php';
+                }
+            });
+            
+            // Trigger change event on load in case the browser remembers the selection
+            roleSelect.dispatchEvent(new Event('change'));
+        }
+    });
     </script>
 </body>
 </html>

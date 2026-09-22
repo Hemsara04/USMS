@@ -61,6 +61,10 @@ class AuthController {
 
         // Role-based Redirection
         switch ($user['role']) {
+            case 'Athlete':
+                header('Location: ../views/athletic_regestration.php');
+                exit;
+
             case 'TIC':
                 header('Location: ../views/tic_equipment_requests.php');
                 exit;
