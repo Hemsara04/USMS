@@ -294,11 +294,12 @@ DROP TABLE IF EXISTS `match_results`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `match_results` (
-  `result_id` int(11) NOT NULL,
+  `result_id` int(11) NOT NULL AUTO_INCREMENT,
   `fixture_id` int(11) NOT NULL,
   `scores` varchar(10) NOT NULL,
-  `scorers` text NOT NULL,
-  `player_ratings` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`player_ratings`)),
+  `scorers` text DEFAULT NULL,
+  `match_report` text DEFAULT NULL,
+  `player_ratings` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (`player_ratings` IS NULL OR json_valid(`player_ratings`)),
   PRIMARY KEY (`result_id`),
   UNIQUE KEY `fixture_id` (`fixture_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -531,10 +532,10 @@ DROP TABLE IF EXISTS `training_attendance`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `training_attendance` (
-  `attendance_id` int(11) NOT NULL,
+  `attendance_id` int(11) NOT NULL AUTO_INCREMENT,
   `session_id` int(11) NOT NULL,
   `athlete_id` int(11) NOT NULL,
-  `status` enum('Present','Absent') NOT NULL,
+  `status` enum('Present','Absent','Excused') NOT NULL DEFAULT 'Present',
   PRIMARY KEY (`attendance_id`),
   KEY `session_id` (`session_id`),
   KEY `athlete_id` (`athlete_id`),
@@ -560,13 +561,15 @@ DROP TABLE IF EXISTS `training_sessions`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `training_sessions` (
-  `session_id` int(11) NOT NULL,
+  `session_id` int(11) NOT NULL AUTO_INCREMENT,
   `sport_id` int(11) NOT NULL,
-  `facility_id` int(11) NOT NULL,
+  `facility_id` int(11) DEFAULT NULL,
   `session_date` date NOT NULL,
   `start_time` time NOT NULL,
   `duration_minutes` time NOT NULL,
   `session_type` enum('Practice','Conditioning','Tactical') NOT NULL,
+  `focus_area` varchar(255) DEFAULT NULL,
+  `notes` text DEFAULT NULL,
   PRIMARY KEY (`session_id`),
   KEY `sport_id` (`sport_id`),
   CONSTRAINT `training_sessions_ibfk_1` FOREIGN KEY (`sport_id`) REFERENCES `sports` (`sport_id`)

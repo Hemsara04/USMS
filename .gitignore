@@ -3,6 +3,7 @@
 
 # Documentation and Interim Report files
 docs/
+views/diagrams_viewer.php
 
 # Mac OS files
 .DS_Store

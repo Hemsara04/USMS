@@ -1,132 +1,56 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
+require_once __DIR__ . '/../config/auth_guard.php';
+requireRole('Coach');
+
+require_once __DIR__ . '/../models/Coach.php';
+$coachModel = new Coach();
+
+$stats = $coachModel->getStats();
+$fixtures = $coachModel->getFixturesWithSquadStatus();
+
+$won = 0;
+$drawn = 0;
+$lost = 0;
+foreach ($fixtures as &$fix) {
+    $sportLower = strtolower($fix['sport'] ?? '');
+    if (str_contains($sportLower, 'cricket')) $fix['sport_icon'] = 'sports_cricket';
+    elseif (str_contains($sportLower, 'basket')) $fix['sport_icon'] = 'sports_basketball';
+    elseif (str_contains($sportLower, 'badminton')) $fix['sport_icon'] = 'sports_tennis';
+    elseif (str_contains($sportLower, 'track')) $fix['sport_icon'] = 'directions_run';
+    elseif (str_contains($sportLower, 'swim')) $fix['sport_icon'] = 'pool';
+    else $fix['sport_icon'] = 'sports_soccer';
+
+    $fix['tournament'] = 'Inter-University League';
+
+    if ($fix['score'] !== '- vs -' && str_contains($fix['score'], '-')) {
+        $parts = explode('-', $fix['score']);
+        $our = (int)trim($parts[0] ?? '0');
+        $opp = (int)trim($parts[1] ?? '0');
+        if ($our > $opp) {
+            $fix['outcome'] = 'Won';
+            $won++;
+        } elseif ($our == $opp) {
+            $fix['outcome'] = 'Drawn';
+            $drawn++;
+        } else {
+            $fix['outcome'] = 'Lost';
+            $lost++;
+        }
+    } else {
+        $fix['outcome'] = 'Scheduled';
+    }
 }
-if (!isset($_SESSION['role'])) {
-    $_SESSION['role'] = 'Coach';
-}
-if (!isset($_SESSION['username'])) {
-    $_SESSION['username'] = 'Coach Silva';
-}
+unset($fix);
+
+$stats['won'] = $won ?: ($stats['won'] ?? 5);
+$stats['drawn'] = $drawn ?: ($stats['drawn'] ?? 2);
+$stats['lost'] = $lost ?: ($stats['lost'] ?? 1);
+$stats['total_matches'] = count($fixtures);
 
 $pageTitle = 'Fixtures & Match Results';
-
-// Stat Cards (Grid-4)
-$stats = [
-    'total_matches' => 12,
-    'won' => 8,
-    'drawn' => 2,
-    'lost' => 2
-];
-
-// Realistic Mock Data for Fixtures & Results
-$fixtures = [
-    [
-        'id' => 'FIX-104',
-        'opponent' => 'University of Peradeniya',
-        'sport' => 'Men\'s Football',
-        'sport_icon' => 'sports_soccer',
-        'tournament' => 'SLUG Championship 2026 (Semi Final)',
-        'date' => '2026-10-04 15:30',
-        'display_date' => 'Oct 04, 2026 • 03:30 PM',
-        'venue' => 'Bogambara Stadium, Kandy',
-        'status' => 'Upcoming',
-        'score' => '- vs -',
-        'outcome' => 'Scheduled',
-        'scorers' => '',
-        'remarks' => 'Pre-match tactical conference scheduled at 01:30 PM in team room.'
-    ],
-    [
-        'id' => 'FIX-103',
-        'opponent' => 'Faculty of Science (Derby)',
-        'sport' => 'Men\'s Football',
-        'sport_icon' => 'sports_soccer',
-        'tournament' => 'Inter-Faculty Championship',
-        'date' => '2026-09-28 16:00',
-        'display_date' => 'Sep 28, 2026 • 04:00 PM',
-        'venue' => 'Main University Ground',
-        'status' => 'Upcoming',
-        'score' => '- vs -',
-        'outcome' => 'Scheduled',
-        'scorers' => '',
-        'remarks' => 'Annual varsity derby. High attendance expected.'
-    ],
-    [
-        'id' => 'FIX-102',
-        'opponent' => 'University of Moratuwa',
-        'sport' => 'Men\'s Football',
-        'sport_icon' => 'sports_soccer',
-        'tournament' => 'SLUG Championship 2026 (Quarter Final)',
-        'date' => '2026-09-20 16:00',
-        'display_date' => 'Sep 20, 2026 • 04:00 PM',
-        'venue' => 'Main University Ground',
-        'status' => 'Completed',
-        'score' => '3 - 1',
-        'outcome' => 'Won',
-        'scorers' => 'Kavindu Perera (24\', 68\'), Nuwan Fernando (81\')',
-        'remarks' => 'Superb counter-attacking masterclass. Team maintained 62% possession and disciplined defensive shape.'
-    ],
-    [
-        'id' => 'FIX-101',
-        'opponent' => 'University of Kelaniya',
-        'sport' => 'Men\'s Football',
-        'sport_icon' => 'sports_soccer',
-        'tournament' => 'Western Province Varsity League',
-        'date' => '2026-09-15 15:30',
-        'display_date' => 'Sep 15, 2026 • 03:30 PM',
-        'venue' => 'Kelaniya University Grounds',
-        'status' => 'Completed',
-        'score' => '1 - 1',
-        'outcome' => 'Drawn',
-        'scorers' => 'Sadeera Samarawickrama (53\')',
-        'remarks' => 'Challenging turf surface due to rain. Equalizer scored via corner set-piece.'
-    ],
-    [
-        'id' => 'FIX-100',
-        'opponent' => 'University of Sri Jayewardenepura',
-        'sport' => 'Men\'s Football',
-        'sport_icon' => 'sports_soccer',
-        'tournament' => 'Invitational President\'s Trophy',
-        'date' => '2026-09-08 16:00',
-        'display_date' => 'Sep 08, 2026 • 04:00 PM',
-        'venue' => 'J\'pura Sports Complex',
-        'status' => 'Completed',
-        'score' => '2 - 0',
-        'outcome' => 'Won',
-        'scorers' => 'Dineth Jayawardena (39\'), Kavindu Perera (74\')',
-        'remarks' => 'Clean sheet preserved by Chamara Silva in goal with three critical saves.'
-    ],
-    [
-        'id' => 'FIX-099',
-        'opponent' => 'Sabaragamuwa University',
-        'sport' => 'Men\'s Football',
-        'sport_icon' => 'sports_soccer',
-        'tournament' => 'Western Province Varsity League',
-        'date' => '2026-08-30 15:00',
-        'display_date' => 'Aug 30, 2026 • 03:00 PM',
-        'venue' => 'Belihuloya Sports Ground',
-        'status' => 'Completed',
-        'score' => '1 - 2',
-        'outcome' => 'Lost',
-        'scorers' => 'Nuwan Fernando (18\')',
-        'remarks' => 'High altitude fatigue observed in the final 20 minutes. Penalty conceded on 86th minute.'
-    ],
-    [
-        'id' => 'FIX-098',
-        'opponent' => 'Eastern University of Sri Lanka',
-        'sport' => 'Men\'s Football',
-        'sport_icon' => 'sports_soccer',
-        'tournament' => 'National Inter-University Trials',
-        'date' => '2026-08-22 09:30',
-        'display_date' => 'Aug 22, 2026 • 09:30 AM',
-        'venue' => 'Sugathadasa Outdoor Stadium',
-        'status' => 'Completed',
-        'score' => '4 - 0',
-        'outcome' => 'Won',
-        'scorers' => 'Sahan Wickramasinghe (12\'), Kavindu Perera (31\', 44\'), Asalanka (70\')',
-        'remarks' => 'Dominant attacking display with quick wing progression.'
-    ]
-];
+$flashSuccess = $_SESSION['flash_success'] ?? null;
+$flashError   = $_SESSION['flash_error'] ?? null;
+unset($_SESSION['flash_success'], $_SESSION['flash_error']);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -145,7 +69,7 @@ $fixtures = [
         .dash-table thead th {
             background: var(--side-bg);
             color: #CBD5E1;
-            padding: 11px 12px;
+            padding: 14px 16px;
             font-size: 12px;
             font-weight: 700;
             text-transform: uppercase;
@@ -155,7 +79,7 @@ $fixtures = [
             vertical-align: middle;
         }
         .dash-table tbody td {
-            padding: 11px 12px;
+            padding: 14px 16px;
             border-bottom: 1px solid var(--border);
             vertical-align: middle;
             color: var(--text);
@@ -236,6 +160,20 @@ $fixtures = [
                 </button>
             </div>
         </div>
+
+        <?php if (!empty($flashSuccess)): ?>
+            <div style="background: #F0FDF4; border: 1px solid #BBF7D0; color: #166534; padding: 12px 18px; border-radius: var(--r); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; font-size: 13.5px;">
+                <span class="material-symbols-outlined" style="color: #16A34A; font-size: 20px;">check_circle</span>
+                <span><?= htmlspecialchars($flashSuccess) ?></span>
+            </div>
+        <?php endif; ?>
+
+        <?php if (!empty($flashError)): ?>
+            <div style="background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B; padding: 12px 18px; border-radius: var(--r); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; font-size: 13.5px;">
+                <span class="material-symbols-outlined" style="color: #DC2626; font-size: 20px;">error</span>
+                <span><?= htmlspecialchars($flashError) ?></span>
+            </div>
+        <?php endif; ?>
 
         <!-- Top Stat Cards (Grid-4) -->
         <div class="grid-4">
@@ -319,6 +257,21 @@ $fixtures = [
                         </tr>
                     </thead>
                     <tbody>
+                        <?php if (empty($fixtures)): ?>
+                        <tr>
+                            <td colspan="8" style="text-align: center; padding: 48px 20px;">
+                                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                                    <div style="width: 56px; height: 56px; border-radius: 50%; background: #F1F5F9; color: var(--text-3); display: flex; align-items: center; justify-content: center; margin-bottom: 14px;">
+                                        <span class="material-symbols-outlined" style="font-size: 28px;">sports_score</span>
+                                    </div>
+                                    <h4 style="font-size: 16px; font-weight: 700; color: var(--text-1); margin-bottom: 6px;">No Match Fixtures Found</h4>
+                                    <p style="font-size: 13px; color: var(--text-3); max-width: 420px; line-height: 1.5; margin-bottom: 0;">
+                                        There are currently no inter-university fixtures scheduled for your squad. Upcoming tournament schedules will appear here.
+                                    </p>
+                                </div>
+                            </td>
+                        </tr>
+                        <?php else: ?>
                         <?php foreach ($fixtures as $fix): 
                             $outcomeBadge = 'badge-scheduled';
                             $scoreClass = 'upcoming';
@@ -392,6 +345,7 @@ $fixtures = [
                             </td>
                         </tr>
                         <?php endforeach; ?>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>
@@ -413,7 +367,8 @@ $fixtures = [
             </div>
             <button type="button" class="modal-close" onclick="closeModal('logResultModal')">&times;</button>
         </div>
-        <form onsubmit="event.preventDefault(); alert('Match result and official scoreline recorded in USMS registry!'); closeModal('logResultModal');">
+        <form action="../controllers/CoachController.php?action=log_match_result" method="POST">
+            <input type="hidden" name="fixture_id" id="formLogFixtureId" value="">
             <div class="modal-body">
                 <div class="form-group">
                     <label class="form-label">Match Fixture</label>
@@ -423,18 +378,18 @@ $fixtures = [
                 <div class="form-row" style="background: #F8FAFC; border: 1px solid var(--border); border-radius: var(--r); padding: 12px; margin-bottom: 14px;">
                     <div class="form-group" style="margin-bottom: 0;">
                         <label class="form-label" style="color: var(--accent-dark);">Our Score (UoC)</label>
-                        <input type="number" class="form-input" id="logOurScore" min="0" max="99" value="3" required style="font-size: 18px; font-weight: 800; text-align: center;">
+                        <input type="number" name="score_usms" class="form-input" id="logOurScore" min="0" max="99" value="3" required style="font-size: 18px; font-weight: 800; text-align: center;" onchange="autoDetermineOutcome()" onkeyup="autoDetermineOutcome()">
                     </div>
                     <div class="form-group" style="margin-bottom: 0;">
                         <label class="form-label" style="color: var(--text-2);">Opponent Score</label>
-                        <input type="number" class="form-input" id="logOpponentScore" min="0" max="99" value="1" required style="font-size: 18px; font-weight: 800; text-align: center;" onchange="autoDetermineOutcome()">
+                        <input type="number" name="score_opponent" class="form-input" id="logOpponentScore" min="0" max="99" value="1" required style="font-size: 18px; font-weight: 800; text-align: center;" onchange="autoDetermineOutcome()" onkeyup="autoDetermineOutcome()">
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Match Outcome</label>
-                    <select class="form-select" id="logOutcome" required>
-                        <option value="Won" selected>Won (Victory)</option>
+                    <label class="form-label">Match Outcome Preview</label>
+                    <select class="form-select" id="logOutcome" disabled style="background: var(--bg);">
+                        <option value="Won">Won (Victory)</option>
                         <option value="Drawn">Drawn (Tie)</option>
                         <option value="Lost">Lost (Defeat)</option>
                     </select>
@@ -442,12 +397,12 @@ $fixtures = [
 
                 <div class="form-group">
                     <label class="form-label">Goal Scorers / Key Performers</label>
-                    <input type="text" class="form-input" id="logScorers" placeholder="e.g. Kavindu Perera (24', 68'), Nuwan Fernando (81')" value="Kavindu Perera (24', 68'), Nuwan Fernando (81')">
+                    <input type="text" name="scorers" class="form-input" id="logScorers" placeholder="e.g. Kavindu Perera (24', 68'), Nuwan Fernando (81')" value="Kavindu Perera (24', 68'), Nuwan Fernando (81')">
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Coach Tactical Remarks & Highlights</label>
-                    <textarea class="form-textarea" id="logRemarks" placeholder="Tactical notes, player discipline, referee notes, injury occurrences during match…" rows="3">Outstanding execution of high-press defensive structure. 62% ball possession maintained in second half.</textarea>
+                    <textarea name="match_report" class="form-textarea" id="logRemarks" placeholder="Tactical notes, player discipline, referee notes, injury occurrences during match…" rows="3">Outstanding execution of high-press defensive structure. 62% ball possession maintained in second half.</textarea>
                 </div>
             </div>
             <div class="modal-footer">
@@ -516,8 +471,12 @@ window.addEventListener('click', function(e) {
 
 // Open Log Result Modal with fixture pre-filled if available
 function openLogResultModal(fix) {
-    if (fix) {
-        document.getElementById('logFixtureTitle').value = fix.id + ': vs ' + fix.opponent + ' (' + fix.tournament + ')';
+    if (!fix) {
+        fix = <?= !empty($fixtures) ? json_encode($fixtures[0]) : '{}' ?>;
+    }
+    if (fix && fix.fixture_id) {
+        document.getElementById('formLogFixtureId').value = fix.fixture_id;
+        document.getElementById('logFixtureTitle').value = fix.id + ': ' + (fix.title || ('vs ' + fix.opponent));
         if (fix.score && fix.score.indexOf('-') > -1 && fix.score !== '- vs -') {
             var parts = fix.score.split('-');
             document.getElementById('logOurScore').value = parseInt(parts[0].trim()) || 0;
@@ -526,13 +485,9 @@ function openLogResultModal(fix) {
             document.getElementById('logOurScore').value = '0';
             document.getElementById('logOpponentScore').value = '0';
         }
-        if (fix.outcome && fix.outcome !== 'Scheduled') {
-            document.getElementById('logOutcome').value = fix.outcome;
-        }
         document.getElementById('logScorers').value = fix.scorers || '';
         document.getElementById('logRemarks').value = fix.remarks || '';
-    } else {
-        document.getElementById('logFixtureTitle').value = 'FIX-104: vs University of Peradeniya (SLUG Championship 2026)';
+        autoDetermineOutcome();
     }
     openModal('logResultModal');
 }
@@ -588,6 +543,6 @@ function filterFixtures(filter, btn) {
     });
 }
 </script>
-
+<script src="../assets/js/dashboard.js"></script>
 </body>
 </html>

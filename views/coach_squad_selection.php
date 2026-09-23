@@ -1,85 +1,34 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
+require_once __DIR__ . '/../config/auth_guard.php';
+requireRole('Coach');
+
+require_once __DIR__ . '/../models/Coach.php';
+$coachModel = new Coach();
+
+$stats = $coachModel->getStats();
+$fixtures = $coachModel->getFixturesWithSquadStatus();
+$selectedFixtureId = isset($_GET['fixture_id']) ? (int)$_GET['fixture_id'] : ($fixtures[0]['fixture_id'] ?? 1);
+
+// Find active fixture
+$activeFixture = null;
+foreach ($fixtures as $f) {
+    if ($f['fixture_id'] == $selectedFixtureId) {
+        $activeFixture = $f;
+        break;
+    }
 }
-if (!isset($_SESSION['role'])) {
-    $_SESSION['role'] = 'Coach';
+if (!$activeFixture && !empty($fixtures)) {
+    $activeFixture = $fixtures[0];
+    $selectedFixtureId = $activeFixture['fixture_id'];
 }
-if (!isset($_SESSION['username'])) {
-    $_SESSION['username'] = 'Coach Silva';
-}
+
+$availableAthletes = $coachModel->getAvailableAthletesForSport(1);
+$currentSquad = $coachModel->getSquadForFixture($selectedFixtureId);
 
 $pageTitle = 'Squad Formulation & Selection';
-
-// Stat Cards (Grid-4)
-$stats = [
-    'selected_players' => '15 / 18',
-    'medically_fit' => 24,
-    'under_review' => 3,
-    'disqualified' => 1
-];
-
-// Target Fixtures
-$fixtures = [
-    [
-        'id' => 'FIX-2026-08',
-        'title' => 'SLUG Championship 2026 - Semi Final vs University of Peradeniya',
-        'match_date' => '2026-10-04 • 03:30 PM',
-        'venue' => 'Bogambara Stadium, Kandy',
-        'sport' => 'Men\'s Football',
-        'status' => 'Draft in Progress',
-        'deadline' => 'Sep 28, 2026 (6 days remaining)'
-    ],
-    [
-        'id' => 'FIX-2026-07',
-        'title' => 'Inter-Faculty Championship - Group Stage vs Faculty of Science',
-        'match_date' => '2026-09-28 • 04:00 PM',
-        'venue' => 'Main University Ground',
-        'sport' => 'Men\'s Football',
-        'status' => 'Approved by TIC',
-        'deadline' => 'Finalized'
-    ],
-    [
-        'id' => 'FIX-2026-09',
-        'title' => 'National Universities Invitational vs University of Moratuwa',
-        'match_date' => '2026-10-12 • 09:00 AM',
-        'venue' => 'University of Moratuwa Complex',
-        'sport' => 'Men\'s Football',
-        'status' => 'Upcoming Draft',
-        'deadline' => 'Oct 05, 2026'
-    ]
-];
-
-// Available Athlete Pool (Not yet selected or in pool)
-$availableAthletes = [
-    ['id' => 'ATH-021', 'name' => 'Kusal Mendis', 'index' => 'SC/2022/1029', 'faculty' => 'Science', 'position' => 'Winger / Forward', 'med_status' => 'Fit to Compete', 'can_add' => true],
-    ['id' => 'ATH-034', 'name' => 'Dhananjaya Silva', 'index' => 'MG/2021/8831', 'faculty' => 'Management', 'position' => 'Central Midfielder', 'med_status' => 'Fit to Compete', 'can_add' => true],
-    ['id' => 'ATH-049', 'name' => 'Akila Dananjaya', 'index' => 'AR/2023/4190', 'faculty' => 'Arts', 'position' => 'Full Back', 'med_status' => 'Fit to Compete', 'can_add' => true],
-    ['id' => 'ATH-058', 'name' => 'Pathum Nissanka', 'index' => 'TC/2022/6721', 'faculty' => 'Technology', 'position' => 'Striker', 'med_status' => 'Fit to Compete', 'can_add' => true],
-    ['id' => 'ATH-066', 'name' => 'Wanindu Hasaranga', 'index' => 'SC/2021/3392', 'faculty' => 'Science', 'position' => 'Defensive Midfielder', 'med_status' => 'Under Review', 'can_add' => false, 'med_note' => 'Awaiting hamstring ultrasound report from Medical Center'],
-    ['id' => 'ATH-072', 'name' => 'Lahiru Kumara', 'index' => 'EN/2023/9102', 'faculty' => 'Engineering', 'position' => 'Goalkeeper', 'med_status' => 'Fit to Compete', 'can_add' => true],
-    ['id' => 'ATH-081', 'name' => 'Kasun Rajitha', 'index' => 'LW/2022/1183', 'faculty' => 'Law', 'position' => 'Center Back', 'med_status' => 'Temporarily Unfit', 'can_add' => false, 'med_note' => 'Sprained ankle grade II - Cleared for non-contact training only'],
-    ['id' => 'ATH-095', 'name' => 'Bhanuka Rajapaksa', 'index' => 'MG/2023/5021', 'faculty' => 'Management', 'position' => 'Forward', 'med_status' => 'Under Review', 'can_add' => false, 'med_note' => 'Cardiovascular stress ECG test scheduled']
-];
-
-// Current Match Squad Roster (Already formulated in draft)
-$currentSquad = [
-    ['jersey' => 10, 'name' => 'Kavindu Perera', 'id' => 'ATH-042', 'role' => 'Captain', 'position' => 'Attacking Mid', 'faculty' => 'Science', 'status' => 'Cleared'],
-    ['jersey' => 1,  'name' => 'Chamara Silva', 'id' => 'ATH-089', 'role' => 'Starting XI', 'position' => 'Goalkeeper', 'faculty' => 'Arts', 'status' => 'Cleared'],
-    ['jersey' => 4,  'name' => 'Dineth Jayawardena', 'id' => 'ATH-055', 'role' => 'Starting XI', 'position' => 'Center Back', 'faculty' => 'Engineering', 'status' => 'Cleared'],
-    ['jersey' => 5,  'name' => 'Praveen Jayawickrama', 'id' => 'ATH-012', 'role' => 'Starting XI', 'position' => 'Center Back', 'faculty' => 'Science', 'status' => 'Cleared'],
-    ['jersey' => 2,  'name' => 'Malith Bandara', 'id' => 'ATH-031', 'role' => 'Starting XI', 'position' => 'Right Back', 'faculty' => 'Law', 'status' => 'Cleared'],
-    ['jersey' => 3,  'name' => 'Asitha Fernando', 'id' => 'ATH-019', 'role' => 'Starting XI', 'position' => 'Left Back', 'faculty' => 'Management', 'status' => 'Cleared'],
-    ['jersey' => 6,  'name' => 'Sahan Wickramasinghe', 'id' => 'ATH-063', 'role' => 'Starting XI', 'position' => 'Defensive Mid', 'faculty' => 'Science', 'status' => 'Cleared'],
-    ['jersey' => 8,  'name' => 'Charith Asalanka', 'id' => 'ATH-027', 'role' => 'Starting XI', 'position' => 'Central Mid', 'faculty' => 'Technology', 'status' => 'Cleared'],
-    ['jersey' => 7,  'name' => 'Nuwan Fernando', 'id' => 'ATH-018', 'role' => 'Starting XI', 'position' => 'Right Winger', 'faculty' => 'Management', 'status' => 'Cleared'],
-    ['jersey' => 11, 'name' => 'Maheesh Theekshana', 'id' => 'ATH-061', 'role' => 'Starting XI', 'position' => 'Left Winger', 'faculty' => 'Arts', 'status' => 'Cleared'],
-    ['jersey' => 9,  'name' => 'Sadeera Samarawickrama', 'id' => 'ATH-088', 'role' => 'Starting XI', 'position' => 'Striker', 'faculty' => 'Medicine', 'status' => 'Cleared'],
-    ['jersey' => 12, 'name' => 'Dunith Wellalage', 'id' => 'ATH-039', 'role' => 'Substitute', 'position' => 'Midfielder', 'faculty' => 'Science', 'status' => 'Cleared'],
-    ['jersey' => 14, 'name' => 'Pramod Madushan', 'id' => 'ATH-044', 'role' => 'Substitute', 'position' => 'Defender', 'faculty' => 'Technology', 'status' => 'Cleared'],
-    ['jersey' => 16, 'name' => 'Matheesha Pathirana', 'id' => 'ATH-051', 'role' => 'Substitute', 'position' => 'Forward', 'faculty' => 'Management', 'status' => 'Cleared'],
-    ['jersey' => 18, 'name' => 'Nuwanidu Fernando', 'id' => 'ATH-090', 'role' => 'Substitute', 'position' => 'Reserve GK', 'faculty' => 'Engineering', 'status' => 'Cleared']
-];
+$flashSuccess = $_SESSION['flash_success'] ?? null;
+$flashError   = $_SESSION['flash_error'] ?? null;
+unset($_SESSION['flash_success'], $_SESSION['flash_error']);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -98,7 +47,7 @@ $currentSquad = [
         .dash-table thead th {
             background: var(--side-bg);
             color: #CBD5E1;
-            padding: 10px 12px;
+            padding: 13px 14px;
             font-size: 11.5px;
             font-weight: 700;
             text-transform: uppercase;
@@ -108,7 +57,7 @@ $currentSquad = [
             vertical-align: middle;
         }
         .dash-table tbody td {
-            padding: 9px 12px;
+            padding: 13px 14px;
             border-bottom: 1px solid var(--border);
             vertical-align: middle;
             color: var(--text);
@@ -201,12 +150,26 @@ $currentSquad = [
             </div>
         </div>
 
+        <?php if (!empty($flashSuccess)): ?>
+            <div style="background: #F0FDF4; border: 1px solid #BBF7D0; color: #166534; padding: 12px 18px; border-radius: var(--r); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; font-size: 13.5px;">
+                <span class="material-symbols-outlined" style="color: #16A34A; font-size: 20px;">check_circle</span>
+                <span><?= htmlspecialchars($flashSuccess) ?></span>
+            </div>
+        <?php endif; ?>
+
+        <?php if (!empty($flashError)): ?>
+            <div style="background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B; padding: 12px 18px; border-radius: var(--r); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; font-size: 13.5px;">
+                <span class="material-symbols-outlined" style="color: #DC2626; font-size: 20px;">error</span>
+                <span><?= htmlspecialchars($flashError) ?></span>
+            </div>
+        <?php endif; ?>
+
         <!-- Top Stat Cards (Grid-4) -->
         <div class="grid-4">
             <div class="stat-card">
                 <div>
                     <div class="stat-label">Selected Players</div>
-                    <div class="stat-value" id="statSelectedCount" style="color: var(--accent-dark);"><?= $stats['selected_players'] ?></div>
+                    <div class="stat-value" id="statSelectedCount" style="color: var(--accent-dark);"><?= count($currentSquad) ?> / 18</div>
                 </div>
                 <div class="stat-icon" style="color: var(--accent); background: var(--accent-bg);">
                     <span class="material-symbols-outlined">group_add</span>
@@ -216,7 +179,7 @@ $currentSquad = [
             <div class="stat-card">
                 <div>
                     <div class="stat-label">Medically Fit</div>
-                    <div class="stat-value" style="color: #16A34A;"><?= $stats['medically_fit'] ?></div>
+                    <div class="stat-value" style="color: #16A34A;"><?= $stats['medically_fit'] ?? 24 ?></div>
                 </div>
                 <div class="stat-icon" style="color: #16A34A; background: #F0FDF4;">
                     <span class="material-symbols-outlined">verified_user</span>
@@ -226,7 +189,7 @@ $currentSquad = [
             <div class="stat-card">
                 <div>
                     <div class="stat-label">Under Medical Review</div>
-                    <div class="stat-value" style="color: #D97706;"><?= $stats['under_review'] ?></div>
+                    <div class="stat-value" style="color: #D97706;"><?= $stats['medically_inactive'] ?? 3 ?></div>
                 </div>
                 <div class="stat-icon" style="color: #D97706; background: #FFFBEB;">
                     <span class="material-symbols-outlined">warning</span>
@@ -235,11 +198,11 @@ $currentSquad = [
 
             <div class="stat-card">
                 <div>
-                    <div class="stat-label">Disqualified / Unfit</div>
-                    <div class="stat-value" style="color: #DC2626;"><?= $stats['disqualified'] ?></div>
+                    <div class="stat-label">Matches Scheduled</div>
+                    <div class="stat-value" style="color: var(--accent);"><?= count($fixtures) ?></div>
                 </div>
-                <div class="stat-icon" style="color: #DC2626; background: #FEF2F2;">
-                    <span class="material-symbols-outlined">block</span>
+                <div class="stat-icon" style="color: var(--accent); background: #EFF6FF;">
+                    <span class="material-symbols-outlined">event</span>
                 </div>
             </div>
         </div>
@@ -249,9 +212,11 @@ $currentSquad = [
             <div style="flex: 1; min-width: 280px;">
                 <label class="form-label" style="font-size: 12px; text-transform: uppercase; color: var(--text-3); margin-bottom: 4px;">Target Match Fixture</label>
                 <div style="display: flex; align-items: center; gap: 10px;">
-                    <select class="form-select" id="fixtureSelect" style="font-weight: 700; color: var(--primary);" onchange="updateFixtureDisplay(this.value)">
+                    <select class="form-select" id="fixtureSelect" style="font-weight: 700; color: var(--primary);" onchange="window.location.href='coach_squad_selection.php?fixture_id=' + this.value">
                         <?php foreach ($fixtures as $f): ?>
-                            <option value="<?= htmlspecialchars($f['id']) ?>"><?= htmlspecialchars($f['title']) ?> (<?= htmlspecialchars($f['match_date']) ?>)</option>
+                            <option value="<?= $f['fixture_id'] ?>" <?= ($f['fixture_id'] == $selectedFixtureId) ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($f['title']) ?> (<?= htmlspecialchars($f['display_date']) ?>)
+                            </option>
                         <?php endforeach; ?>
                     </select>
                 </div>
@@ -260,13 +225,15 @@ $currentSquad = [
             <div style="display: flex; align-items: center; gap: 14px;">
                 <div>
                     <span style="font-size: 11.5px; color: var(--text-3); display: block;">Draft Status</span>
-                    <span class="badge badge-warning" id="fixtureDraftBadge">Draft in Progress</span>
+                    <span class="badge <?= (($activeFixture['squad_status'] ?? '') === 'Approved by TIC') ? 'badge-success' : 'badge-warning' ?>" id="fixtureDraftBadge">
+                        <?= htmlspecialchars($activeFixture['squad_status'] ?? 'Draft in Progress') ?>
+                    </span>
                 </div>
                 <div style="border-left: 1px solid var(--border); padding-left: 14px;">
-                    <span style="font-size: 11.5px; color: var(--text-3); display: block;">Submission Deadline</span>
-                    <strong style="font-size: 13px; color: var(--accent-dark);">Sep 28, 2026 (6 days)</strong>
+                    <span style="font-size: 11.5px; color: var(--text-3); display: block;">Match Date</span>
+                    <strong style="font-size: 13px; color: var(--accent-dark);"><?= htmlspecialchars($activeFixture['display_date'] ?? 'Upcoming') ?></strong>
                 </div>
-                <button type="button" class="btn btn-outline btn-sm" onclick="alert('Rules: Max 18 players per squad. All athletes must possess valid medical clearance issued within 30 days.')">
+                <button type="button" class="btn btn-outline btn-sm" onclick="alert('Rules: Max 18 players per squad. All athletes must possess valid medical clearance.')">
                     <span class="material-symbols-outlined" style="font-size: 15px;">info</span>
                     Eligibility Rules
                 </button>
@@ -302,9 +269,7 @@ $currentSquad = [
                         </thead>
                         <tbody>
                             <?php foreach ($availableAthletes as $ath): 
-                                $medClass = 'badge-success';
-                                if ($ath['med_status'] === 'Under Review') $medClass = 'badge-warning';
-                                elseif ($ath['med_status'] === 'Temporarily Unfit') $medClass = 'badge-danger';
+                                $medClass = ($ath['med_status'] === 'Fit to Compete') ? 'badge-success' : 'badge-warning';
                             ?>
                             <tr>
                                 <td>
@@ -315,13 +280,13 @@ $currentSquad = [
                                     <span style="font-weight: 500; font-size: 12.5px;"><?= htmlspecialchars($ath['position']) ?></span>
                                 </td>
                                 <td>
-                                    <span class="badge <?= $medClass ?>" title="<?= htmlspecialchars($ath['med_note'] ?? 'Cleared by University Health Center') ?>">
+                                    <span class="badge <?= $medClass ?>" title="<?= htmlspecialchars($ath['med_note'] ?? 'Cleared') ?>">
                                         <?= htmlspecialchars($ath['med_status']) ?>
                                     </span>
                                 </td>
                                 <td style="text-align: right;">
                                     <?php if ($ath['can_add']): ?>
-                                        <button type="button" class="btn btn-outline btn-sm" onclick="addToSquad('<?= htmlspecialchars($ath['id']) ?>', '<?= htmlspecialchars(addslashes($ath['name'])) ?>', '<?= htmlspecialchars(addslashes($ath['position'])) ?>', '<?= htmlspecialchars($ath['faculty']) ?>')">
+                                        <button type="button" class="btn btn-outline btn-sm" onclick="addToSquad('<?= htmlspecialchars($ath['id']) ?>', '<?= htmlspecialchars(addslashes($ath['name'])) ?>', '<?= htmlspecialchars(addslashes($ath['position'])) ?>', '<?= htmlspecialchars(addslashes($ath['faculty'])) ?>', <?= (int)$ath['athlete_id'] ?>)">
                                             <span class="material-symbols-outlined" style="font-size: 14px; color: var(--accent);">add</span>
                                             + Add
                                         </button>
@@ -347,7 +312,7 @@ $currentSquad = [
                         <span class="tab-counter info" id="squadRosterCount"><?= count($currentSquad) ?> / 18</span>
                     </div>
                     <div style="display: flex; gap: 6px;">
-                        <span class="badge badge-success" style="font-size: 11px;">100% Medically Fit</span>
+                        <span class="badge badge-success" style="font-size: 11px;">Active Match Draft</span>
                     </div>
                 </div>
 
@@ -358,25 +323,40 @@ $currentSquad = [
                                 <th style="width: 50px;">Jersey</th>
                                 <th>Player Name</th>
                                 <th>Assigned Role</th>
-                                <th>Position</th>
+                                <th>Faculty</th>
                                 <th style="text-align: right;">Remove</th>
                             </tr>
                         </thead>
                         <tbody id="squadTableBody">
+                            <?php if (empty($currentSquad)): ?>
+                            <tr id="emptySquadRow">
+                                <td colspan="5" style="text-align: center; padding: 48px 16px;">
+                                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                                        <div style="width: 48px; height: 48px; border-radius: 50%; background: #F1F5F9; color: var(--text-3); display: flex; align-items: center; justify-content: center; margin-bottom: 12px;">
+                                            <span class="material-symbols-outlined" style="font-size: 24px;">group_add</span>
+                                        </div>
+                                        <h5 style="font-size: 15px; font-weight: 700; color: var(--text-1); margin-bottom: 4px;">No Players Drafted Yet</h5>
+                                        <p style="font-size: 12.5px; color: var(--text-3); max-width: 320px; line-height: 1.4; margin-bottom: 0;">
+                                            Click <strong>+ Add</strong> on candidates from the available athlete pool on the left to form your match squad.
+                                        </p>
+                                    </div>
+                                </td>
+                            </tr>
+                            <?php else: ?>
                             <?php foreach ($currentSquad as $p): 
                                 $roleClass = 'role-badge-starter';
                                 if ($p['role'] === 'Captain') $roleClass = 'role-badge-captain';
                                 elseif ($p['role'] === 'Substitute') $roleClass = 'role-badge-sub';
                             ?>
-                            <tr id="squad-row-<?= htmlspecialchars($p['id']) ?>">
+                            <tr id="squad-row-<?= htmlspecialchars($p['id']) ?>" data-athlete-id="<?= (int)$p['athlete_id'] ?>">
                                 <td>
                                     <span class="mini-avatar" style="background: var(--side-bg); color: #fff; font-size: 11.5px; font-weight: 700;">
                                         #<?= (int)$p['jersey'] ?>
                                     </span>
                                 </td>
                                 <td>
-                                    <span class="cell-main"><?= htmlspecialchars($p['name']) ?></span>
-                                    <span class="cell-sub"><?= htmlspecialchars($p['faculty']) ?></span>
+                                    <span class="cell-main" style="font-weight: 600;"><?= htmlspecialchars($p['name']) ?></span>
+                                    <span class="cell-sub" style="color: var(--text-3);"><?= htmlspecialchars($p['faculty']) ?></span>
                                 </td>
                                 <td>
                                     <select class="role-select <?= $roleClass ?>" onchange="updateRoleBadge(this)">
@@ -386,7 +366,7 @@ $currentSquad = [
                                     </select>
                                 </td>
                                 <td>
-                                    <span style="font-size: 12.5px; color: var(--text-2); font-weight: 500;"><?= htmlspecialchars($p['position']) ?></span>
+                                    <span style="font-size: 12.5px; color: var(--text-2); font-weight: 500;"><?= htmlspecialchars($p['faculty']) ?></span>
                                 </td>
                                 <td style="text-align: right;">
                                     <button type="button" class="btn btn-danger btn-sm" onclick="removeFromSquad('<?= htmlspecialchars($p['id']) ?>', '<?= htmlspecialchars(addslashes($p['name'])) ?>')">
@@ -395,6 +375,7 @@ $currentSquad = [
                                 </td>
                             </tr>
                             <?php endforeach; ?>
+                            <?php endif; ?>
                         </tbody>
                     </table>
                 </div>
@@ -415,34 +396,36 @@ $currentSquad = [
             </div>
             <button type="button" class="modal-close" onclick="closeModal('submitSquadModal')">&times;</button>
         </div>
-        <form onsubmit="event.preventDefault(); alert('Official match squad submitted to TIC Officer Mr. Wickramasinghe for accreditation!'); closeModal('submitSquadModal');">
+        <form action="../controllers/CoachController.php?action=submit_squad" method="POST" onsubmit="prepareSquadForm()">
+            <input type="hidden" name="fixture_id" value="<?= (int)$selectedFixtureId ?>">
+            <div id="squadHiddenInputs"></div>
             <div class="modal-body">
                 <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: var(--r); padding: 12px 16px; margin-bottom: 14px; display: flex; align-items: center; gap: 10px;">
                     <span class="material-symbols-outlined" style="color: #16A34A; font-size: 24px;">task_alt</span>
                     <div>
                         <div style="font-weight: 700; color: #16A34A; font-size: 13.5px;">Medical Compliance Verified</div>
-                        <div style="font-size: 12px; color: #15803D;">All 15 formulated athletes have active medical clearance certificates logged in the USMS clinic.</div>
+                        <div style="font-size: 12px; color: #15803D;">All formulated candidates have valid medical fitness clearance logged in USMS clinic records.</div>
                     </div>
                 </div>
 
                 <div style="background: #F8FAFC; border: 1px solid var(--border); border-radius: var(--r); padding: 12px 16px; margin-bottom: 14px;">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px;">
                         <span>Target Match:</span>
-                        <strong style="color: var(--accent-dark);">SLUG Semi Final vs UoP</strong>
+                        <strong style="color: var(--accent-dark);"><?= htmlspecialchars($activeFixture['title'] ?? 'Selected Match Fixture') ?></strong>
                     </div>
                     <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px;">
                         <span>Squad Formulation:</span>
-                        <strong>15 Athletes (1 Captain, 10 Starters, 4 Subs)</strong>
+                        <strong><span id="modalSquadCount"><?= count($currentSquad) ?></span> Athletes Selected</strong>
                     </div>
                     <div style="display: flex; justify-content: space-between; font-size: 13px;">
-                        <span>Submission Deadline:</span>
-                        <strong style="color: #D97706;">Sep 28, 2026</strong>
+                        <span>Fixture Date:</span>
+                        <strong style="color: #D97706;"><?= htmlspecialchars($activeFixture['display_date'] ?? date('M d, Y')) ?></strong>
                     </div>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Tactical Formation & Coach Notes for TIC</label>
-                    <textarea class="form-textarea" placeholder="Provide formation note (e.g. 4-3-3 attacking system), jersey conflicts, or emergency standby notices…" rows="3">Standard 4-3-3 high-press formation. Medical staff cleared Kavindu Perera following mild calf assessment. All jerseys inspected.</textarea>
+                    <textarea name="notes" class="form-textarea" placeholder="Provide formation note (e.g. 4-3-3 attacking system), jersey conflicts, or emergency standby notices…" rows="3">Standard team formation. All 15 players inspected and ready for official tournament accreditation.</textarea>
                 </div>
             </div>
             <div class="modal-footer">
@@ -477,24 +460,38 @@ function updateRoleBadge(select) {
 }
 
 // Add athlete from pool to squad roster
-function addToSquad(id, name, position, faculty) {
-    var rows = document.querySelectorAll('#squadTableBody tr');
-    if (rows.length >= 18) {
+function addToSquad(id, name, position, faculty, athleteId) {
+    var existingRows = document.querySelectorAll('#squadTableBody tr[data-athlete-id]');
+    if (existingRows.length >= 18) {
         alert('Squad limit reached (Maximum 18 players). Please remove a substitute first.');
         return;
     }
-    var newJersey = rows.length + 1;
+    var existing = document.getElementById('squad-row-' + id);
+    if (existing) {
+        alert(name + ' is already in the match squad.');
+        return;
+    }
+
+    var emptyRow = document.getElementById('emptySquadRow');
+    if (emptyRow) {
+        emptyRow.remove();
+    }
+
+    var newJersey = existingRows.length + 1;
+    var defaultRole = (newJersey <= 11) ? 'Starting XI' : 'Substitute';
+    var roleClass = (newJersey <= 11) ? 'role-badge-starter' : 'role-badge-sub';
+
     var tr = document.createElement('tr');
     tr.id = 'squad-row-' + id;
+    tr.setAttribute('data-athlete-id', athleteId);
     tr.innerHTML = '<td><span class="mini-avatar" style="background: var(--side-bg); color: #fff; font-size: 11.5px; font-weight: 700;">#' + newJersey + '</span></td>' +
-        '<td><span class="cell-main">' + name + '</span><span class="cell-sub">' + faculty + '</span></td>' +
-        '<td><select class="role-select role-badge-sub" onchange="updateRoleBadge(this)"><option value="Starting XI">Starting XI</option><option value="Substitute" selected>Substitute</option><option value="Captain">Captain (C)</option></select></td>' +
-        '<td><span style="font-size: 12.5px; color: var(--text-2); font-weight: 500;">' + position + '</span></td>' +
+        '<td><span class="cell-main" style="font-weight: 600;">' + name + '</span><span class="cell-sub" style="color: var(--text-3);">' + faculty + '</span></td>' +
+        '<td><select class="role-select ' + roleClass + '" onchange="updateRoleBadge(this)"><option value="Starting XI"' + (defaultRole === 'Starting XI' ? ' selected' : '') + '>Starting XI</option><option value="Substitute"' + (defaultRole === 'Substitute' ? ' selected' : '') + '>Substitute</option><option value="Captain">Captain (C)</option></select></td>' +
+        '<td><span style="font-size: 12.5px; color: var(--text-2); font-weight: 500;">' + faculty + '</span></td>' +
         '<td style="text-align: right;"><button type="button" class="btn btn-danger btn-sm" onclick="removeFromSquad(\'' + id + '\', \'' + name.replace(/'/g, "\\'") + '\')"><span class="material-symbols-outlined" style="font-size: 14px;">close</span></button></td>';
 
     document.getElementById('squadTableBody').appendChild(tr);
     updateSquadCounters();
-    alert(name + ' added to match squad substitute bench.');
 }
 
 // Remove athlete from squad roster
@@ -503,14 +500,42 @@ function removeFromSquad(id, name) {
     if (row && confirm('Remove ' + name + ' from match squad?')) {
         row.remove();
         updateSquadCounters();
+
+        var remaining = document.querySelectorAll('#squadTableBody tr[data-athlete-id]');
+        if (remaining.length === 0) {
+            var tbody = document.getElementById('squadTableBody');
+            tbody.innerHTML = '<tr id="emptySquadRow"><td colspan="5" style="text-align: center; padding: 48px 16px;"><div style="display: flex; flex-direction: column; align-items: center; justify-content: center;"><div style="width: 48px; height: 48px; border-radius: 50%; background: #F1F5F9; color: var(--text-3); display: flex; align-items: center; justify-content: center; margin-bottom: 12px;"><span class="material-symbols-outlined" style="font-size: 24px;">group_add</span></div><h5 style="font-size: 15px; font-weight: 700; color: var(--text-1); margin-bottom: 4px;">No Players Drafted Yet</h5><p style="font-size: 12.5px; color: var(--text-3); max-width: 320px; line-height: 1.4; margin-bottom: 0;">Click <strong>+ Add</strong> on candidates from the available athlete pool on the left to form your match squad.</p></div></td></tr>';
+        }
     }
 }
 
 // Update counters
 function updateSquadCounters() {
-    var count = document.querySelectorAll('#squadTableBody tr').length;
-    document.getElementById('statSelectedCount').textContent = count + ' / 18';
-    document.getElementById('squadRosterCount').textContent = count + ' / 18';
+    var count = document.querySelectorAll('#squadTableBody tr[data-athlete-id]').length;
+    var statEl = document.getElementById('statSelectedCount');
+    if (statEl) statEl.textContent = count + ' / 18';
+    var countEl = document.getElementById('squadRosterCount');
+    if (countEl) countEl.textContent = count + ' / 18';
+    var modalEl = document.getElementById('modalSquadCount');
+    if (modalEl) modalEl.textContent = count;
+}
+
+// Populate hidden inputs for squad form submission
+function prepareSquadForm() {
+    var container = document.getElementById('squadHiddenInputs');
+    if (!container) return;
+    container.innerHTML = '';
+    var rows = document.querySelectorAll('#squadTableBody tr');
+    rows.forEach(function(row) {
+        var athId = row.getAttribute('data-athlete-id');
+        if (athId) {
+            var input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'selected_athletes[]';
+            input.value = athId;
+            container.appendChild(input);
+        }
+    });
 }
 
 // Live Pool Search
@@ -522,18 +547,7 @@ function filterPoolTable() {
         row.style.display = text.indexOf(q) > -1 ? '' : 'none';
     });
 }
-
-function updateFixtureDisplay(val) {
-    var badge = document.getElementById('fixtureDraftBadge');
-    if (val === 'FIX-2026-07') {
-        badge.textContent = 'Approved by TIC';
-        badge.className = 'badge badge-success';
-    } else {
-        badge.textContent = 'Draft in Progress';
-        badge.className = 'badge badge-warning';
-    }
-}
 </script>
-
+<script src="../assets/js/dashboard.js"></script>
 </body>
 </html>

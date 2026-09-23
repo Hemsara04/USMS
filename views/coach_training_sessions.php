@@ -1,129 +1,21 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-if (!isset($_SESSION['role'])) {
-    $_SESSION['role'] = 'Coach';
-}
-if (!isset($_SESSION['username'])) {
-    $_SESSION['username'] = 'Coach Silva';
-}
+require_once __DIR__ . '/../config/auth_guard.php';
+requireRole('Coach');
+
+require_once __DIR__ . '/../models/Coach.php';
+$coachModel = new Coach();
+
+$stats = $coachModel->getStats();
+$trainingSessions = $coachModel->getTrainingSessions();
+$allSports = $coachModel->getAllSports();
+$allFacilities = $coachModel->getAllFacilities();
+
+$selectedSessionId = isset($_GET['session_id']) ? (int)$_GET['session_id'] : ($trainingSessions[0]['session_id'] ?? 1);
+$attendanceRoster = $coachModel->getSessionAttendance($selectedSessionId);
 
 $pageTitle = 'Training Schedule & Attendance Tracker';
-
-// Top Stat Counters
-$stats = [
-    'total_sessions' => 24,
-    'upcoming_sessions' => 5,
-    'avg_attendance' => '88%',
-    'medically_inactive' => 2
-];
-
-// Mock Data for Training Sessions
-$trainingSessions = [
-    [
-        'id' => 'TRN-201',
-        'datetime' => '2026-09-22 16:30',
-        'display_date' => 'Today, Sep 22 • 04:30 PM',
-        'sport' => 'Football',
-        'sport_icon' => 'sports_soccer',
-        'venue' => 'Main University Ground',
-        'focus_area' => 'High-Press & Set Pieces',
-        'attendance_present' => 22,
-        'attendance_total' => 24,
-        'attendance_ratio' => '22/24',
-        'attendance_pct' => 92,
-        'status' => 'Scheduled',
-        'notes' => 'Match simulation with referee rehearsal before the SLUG regional qualifier.'
-    ],
-    [
-        'id' => 'TRN-200',
-        'datetime' => '2026-09-21 06:00',
-        'display_date' => 'Yesterday, Sep 21 • 06:00 AM',
-        'sport' => 'Football',
-        'sport_icon' => 'sports_soccer',
-        'venue' => 'Gym & Fitness Center',
-        'focus_area' => 'Plyometrics & Conditioning',
-        'attendance_present' => 24,
-        'attendance_total' => 24,
-        'attendance_ratio' => '24/24',
-        'attendance_pct' => 100,
-        'status' => 'Completed',
-        'notes' => 'Early morning core mobility, resistance band drills, and squad weigh-in.'
-    ],
-    [
-        'id' => 'TRN-199',
-        'datetime' => '2026-09-23 15:30',
-        'display_date' => 'Tomorrow, Sep 23 • 03:30 PM',
-        'sport' => 'Basketball',
-        'sport_icon' => 'sports_basketball',
-        'venue' => 'Indoor Gymnasium Court 1',
-        'focus_area' => 'Zone Defense & Fast Breaks',
-        'attendance_present' => 14,
-        'attendance_total' => 16,
-        'attendance_ratio' => '14/16',
-        'attendance_pct' => 88,
-        'status' => 'Scheduled',
-        'notes' => 'Full court press transition analysis and perimeter shooting drills.'
-    ],
-    [
-        'id' => 'TRN-198',
-        'datetime' => '2026-09-18 16:00',
-        'display_date' => 'Sep 18, 2026 • 04:00 PM',
-        'sport' => 'Cricket',
-        'sport_icon' => 'sports_cricket',
-        'venue' => 'Turf Nets Complex',
-        'focus_area' => 'Spin Bowling & Death Overs',
-        'attendance_present' => 16,
-        'attendance_total' => 18,
-        'attendance_ratio' => '16/18',
-        'attendance_pct' => 89,
-        'status' => 'Completed',
-        'notes' => 'Target yorker practice and middle-order acceleration under game scenarios.'
-    ],
-    [
-        'id' => 'TRN-197',
-        'datetime' => '2026-09-16 17:00',
-        'display_date' => 'Sep 16, 2026 • 05:00 PM',
-        'sport' => 'Football',
-        'sport_icon' => 'sports_soccer',
-        'venue' => 'Main University Ground',
-        'focus_area' => 'Counter-Attack & Crossing',
-        'attendance_present' => 20,
-        'attendance_total' => 24,
-        'attendance_ratio' => '20/24',
-        'attendance_pct' => 83,
-        'status' => 'Completed',
-        'notes' => 'Wing play combinations and finishing from edge-of-the-box cutbacks.'
-    ],
-    [
-        'id' => 'TRN-196',
-        'datetime' => '2026-09-14 07:00',
-        'display_date' => 'Sep 14, 2026 • 07:00 AM',
-        'sport' => 'Track & Field',
-        'sport_icon' => 'timer',
-        'venue' => 'Synthetic Athletic Track',
-        'focus_area' => 'Speed Intervals & Block Starts',
-        'attendance_present' => 12,
-        'attendance_total' => 12,
-        'attendance_ratio' => '12/12',
-        'attendance_pct' => 100,
-        'status' => 'Completed',
-        'notes' => 'Sprint acceleration curves and reaction time tracking using electronic sensors.'
-    ]
-];
-
-// Mock Athlete Roster for Attendance Sheet Modal
-$mockAthletes = [
-    ['id' => 'ATH-042', 'name' => 'Kavindu Perera', 'jersey' => '#10', 'faculty' => 'Science', 'position' => 'Midfielder', 'med_status' => 'Fit', 'default_attendance' => 'Present'],
-    ['id' => 'ATH-018', 'name' => 'Nuwan Fernando', 'jersey' => '#07', 'faculty' => 'Management', 'position' => 'Forward', 'med_status' => 'Fit', 'default_attendance' => 'Present'],
-    ['id' => 'ATH-089', 'name' => 'Chamara Silva', 'jersey' => '#01', 'faculty' => 'Arts', 'position' => 'Goalkeeper', 'med_status' => 'Fit', 'default_attendance' => 'Present'],
-    ['id' => 'ATH-055', 'name' => 'Dineth Jayawardena', 'jersey' => '#04', 'faculty' => 'Engineering', 'position' => 'Centre Back', 'med_status' => 'Fit', 'default_attendance' => 'Present'],
-    ['id' => 'ATH-063', 'name' => 'Sahan Wickramasinghe', 'jersey' => '#08', 'faculty' => 'Science', 'position' => 'Defensive Mid', 'med_status' => 'Fit', 'default_attendance' => 'Present'],
-    ['id' => 'ATH-077', 'name' => 'Tharindu Alwis', 'jersey' => '#11', 'faculty' => 'Medicine', 'position' => 'Left Winger', 'med_status' => 'Under Review', 'default_attendance' => 'Excused'],
-    ['id' => 'ATH-031', 'name' => 'Malith Bandara', 'jersey' => '#03', 'faculty' => 'Law', 'position' => 'Right Back', 'med_status' => 'Fit', 'default_attendance' => 'Present'],
-    ['id' => 'ATH-094', 'name' => 'Roshan Kumara', 'jersey' => '#09', 'faculty' => 'Technology', 'position' => 'Striker', 'med_status' => 'Temporarily Unfit', 'default_attendance' => 'Absent']
-];
+$flashSuccess = $_SESSION['flash_success'] ?? null;
+$flashError   = $_SESSION['flash_error'] ?? null;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -142,7 +34,7 @@ $mockAthletes = [
         .dash-table thead th {
             background: var(--side-bg);
             color: #CBD5E1;
-            padding: 11px 12px;
+            padding: 14px 16px;
             font-size: 12px;
             font-weight: 700;
             text-transform: uppercase;
@@ -152,7 +44,7 @@ $mockAthletes = [
             vertical-align: middle;
         }
         .dash-table tbody td {
-            padding: 11px 12px;
+            padding: 14px 16px;
             border-bottom: 1px solid var(--border);
             vertical-align: middle;
             color: var(--text);
@@ -241,6 +133,19 @@ $mockAthletes = [
     <?php include __DIR__ . '/partials/tic_header.php'; ?>
 
     <div class="page-content">
+
+        <?php if (!empty($flashSuccess)): ?>
+            <div style="background:#F0FDF4; border:1px solid #BBF7D0; color:#16A34A; padding:10px 14px; border-radius:8px; margin-bottom:14px; font-size:13.5px; display:flex; align-items:center; gap:8px;">
+                <span class="material-symbols-outlined" style="font-size:18px;">check_circle</span>
+                <span><?= htmlspecialchars($flashSuccess) ?></span>
+            </div>
+        <?php endif; ?>
+        <?php if (!empty($flashError)): ?>
+            <div style="background:#FEF2F2; border:1px solid #FECACA; color:#DC2626; padding:10px 14px; border-radius:8px; margin-bottom:14px; font-size:13.5px; display:flex; align-items:center; gap:8px;">
+                <span class="material-symbols-outlined" style="font-size:18px;">error</span>
+                <span><?= htmlspecialchars($flashError) ?></span>
+            </div>
+        <?php endif; ?>
 
         <!-- Action Header -->
         <div class="page-title-row">
@@ -338,6 +243,24 @@ $mockAthletes = [
                         </tr>
                     </thead>
                     <tbody>
+                        <?php if (empty($trainingSessions)): ?>
+                        <tr>
+                            <td colspan="8" style="text-align: center; padding: 48px 20px;">
+                                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                                    <div style="width: 56px; height: 56px; border-radius: 50%; background: #F1F5F9; color: var(--text-3); display: flex; align-items: center; justify-content: center; margin-bottom: 14px;">
+                                        <span class="material-symbols-outlined" style="font-size: 28px;">calendar_today</span>
+                                    </div>
+                                    <h4 style="font-size: 16px; font-weight: 700; color: var(--text-1); margin-bottom: 6px;">No Training Sessions Scheduled</h4>
+                                    <p style="font-size: 13px; color: var(--text-3); max-width: 420px; line-height: 1.5; margin-bottom: 16px;">
+                                        There are currently no team practice sessions on the calendar. Use the button above to schedule your squad's next tactical drill or fitness session.
+                                    </p>
+                                    <button type="button" class="btn btn-teal" onclick="openModal('newSessionModal')">
+                                        <span class="material-symbols-outlined" style="font-size: 18px;">event</span> Schedule First Session
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <?php else: ?>
                         <?php foreach ($trainingSessions as $sess): 
                             $statusBadge = ($sess['status'] === 'Completed') ? 'badge-completed' : 'badge-scheduled';
                             $sessJson = htmlspecialchars(json_encode($sess), ENT_QUOTES, 'UTF-8');
@@ -347,13 +270,10 @@ $mockAthletes = [
                                 <span class="cell-mono" style="font-weight: 700; color: var(--text);"><?= htmlspecialchars($sess['id']) ?></span>
                             </td>
                             <td>
-                                <span class="cell-main"><?= htmlspecialchars($sess['display_date']) ?></span>
+                                <span class="cell-main" style="font-weight: 600;"><?= htmlspecialchars($sess['display_date']) ?></span>
                             </td>
                             <td>
                                 <div class="cell-flex">
-                                    <span class="mini-icon">
-                                        <span class="material-symbols-outlined"><?= htmlspecialchars($sess['sport_icon']) ?></span>
-                                    </span>
                                     <span class="badge badge-info"><?= htmlspecialchars($sess['sport']) ?></span>
                                 </div>
                             </td>
@@ -364,21 +284,27 @@ $mockAthletes = [
                                 </span>
                             </td>
                             <td>
-                                <span class="cell-main"><?= htmlspecialchars($sess['focus_area']) ?></span>
-                                <span class="cell-sub"><?= htmlspecialchars($sess['notes']) ?></span>
+                                <span class="cell-main" style="font-weight: 600;"><?= htmlspecialchars($sess['focus_area']) ?></span>
+                                <?php if (!empty($sess['notes'])): ?>
+                                    <span class="cell-sub" style="color: var(--text-3);"><?= htmlspecialchars($sess['notes']) ?></span>
+                                <?php endif; ?>
                             </td>
                             <td>
                                 <div style="display: flex; align-items: center; gap: 8px;">
                                     <span style="font-size: 12.5px; font-weight: 700; color: var(--text);">
                                         <?= $sess['attendance_ratio'] ?>
                                     </span>
+                                    <?php if ($sess['attendance_pct'] > 0): ?>
                                     <span style="font-size: 11px; color: var(--text-3); font-weight: 600;">
                                         (<?= $sess['attendance_pct'] ?>%)
                                     </span>
+                                    <?php endif; ?>
                                 </div>
+                                <?php if ($sess['attendance_pct'] > 0): ?>
                                 <div class="progress-bar-wrap">
                                     <div class="progress-bar-fill" style="width: <?= $sess['attendance_pct'] ?>%;"></div>
                                 </div>
+                                <?php endif; ?>
                             </td>
                             <td>
                                 <span class="badge <?= $statusBadge ?>">
@@ -386,18 +312,22 @@ $mockAthletes = [
                                 </span>
                             </td>
                             <td style="text-align: right; padding-right: 18px;">
-                                <div class="cell-actions">
-                                    <button type="button" class="btn btn-teal btn-sm" onclick='openAttendanceModal(<?= $sessJson ?>)'>
+                                <div class="cell-actions" style="display: flex; justify-content: flex-end; gap: 6px; align-items: center;">
+                                    <button type="button" class="btn btn-teal btn-sm" onclick='openAttendanceModal(<?= $sessJson ?>)' title="Log or View Attendance">
                                         <span class="material-symbols-outlined" style="font-size: 15px;">checklist</span>
-                                        <?= ($sess['status'] === 'Completed') ? 'View Roster' : 'Log Attendance' ?>
+                                        <?= ($sess['status'] === 'Completed') ? 'Roster' : 'Attendance' ?>
                                     </button>
-                                    <button type="button" class="btn btn-outline btn-sm" onclick="alert('Session details for <?= $sess['id'] ?> are currently locked to active roster.')">
-                                        Edit
+                                    <button type="button" class="btn btn-outline btn-sm" onclick='openEditModal(<?= $sessJson ?>)' title="Edit Session Details">
+                                        <span class="material-symbols-outlined" style="font-size: 14px;">edit</span> Edit
+                                    </button>
+                                    <button type="button" class="btn btn-danger btn-sm" onclick='openDeleteModal(<?= $sessJson ?>)' style="padding: 5px 8px;" title="Cancel / Delete Session">
+                                        <span class="material-symbols-outlined" style="font-size: 15px;">delete</span>
                                     </button>
                                 </div>
                             </td>
                         </tr>
                         <?php endforeach; ?>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>
@@ -416,31 +346,29 @@ $mockAthletes = [
             </div>
             <button type="button" class="modal-close" onclick="closeModal('newSessionModal')">&times;</button>
         </div>
-        <form onsubmit="event.preventDefault(); alert('New training session scheduled successfully!'); closeModal('newSessionModal');">
+        <form action="../controllers/CoachController.php?action=schedule_session" method="POST">
             <div class="modal-body">
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Sport Discipline</label>
-                        <select class="form-select" required>
+                        <select name="sport_id" class="form-select" required>
                             <option value="">Select Sport…</option>
-                            <option value="Football" selected>Football</option>
-                            <option value="Basketball">Basketball</option>
-                            <option value="Cricket">Cricket</option>
-                            <option value="Badminton">Badminton</option>
-                            <option value="Track & Field">Track & Field</option>
-                            <option value="Swimming">Swimming</option>
+                            <?php foreach ($allSports as $sp): ?>
+                                <option value="<?= $sp['sport_id'] ?>" <?= ($sp['sport_id'] == 1) ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($sp['sport_name']) ?>
+                                </option>
+                            <?php endforeach; ?>
                         </select>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Venue / Facility</label>
-                        <select class="form-select" required>
+                        <select name="facility_id" class="form-select" required>
                             <option value="">Select Venue…</option>
-                            <option value="Main University Ground" selected>Main University Ground</option>
-                            <option value="Indoor Gymnasium Court 1">Indoor Gymnasium Court 1</option>
-                            <option value="Turf Nets Complex">Turf Nets Complex</option>
-                            <option value="Gym & Fitness Center">Gym & Fitness Center</option>
-                            <option value="Synthetic Athletic Track">Synthetic Athletic Track</option>
-                            <option value="University Aquatic Complex">University Aquatic Complex</option>
+                            <?php foreach ($allFacilities as $fac): ?>
+                                <option value="<?= $fac['facility_id'] ?>" <?= ($fac['facility_id'] == 2) ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($fac['facility_name']) ?>
+                                </option>
+                            <?php endforeach; ?>
                         </select>
                     </div>
                 </div>
@@ -448,22 +376,43 @@ $mockAthletes = [
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Session Date</label>
-                        <input type="date" class="form-input" value="<?= date('Y-m-d', strtotime('+1 day')) ?>" required>
+                        <input type="date" name="session_date" class="form-input" value="<?= date('Y-m-d', strtotime('+1 day')) ?>" required>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Start Time</label>
-                        <input type="time" class="form-input" value="16:30" required>
+                        <input type="time" name="start_time" class="form-input" value="16:30" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Duration</label>
+                        <select name="duration_minutes" class="form-select">
+                            <option value="01:00:00">1 Hour</option>
+                            <option value="01:30:00" selected>1.5 Hours (90 mins)</option>
+                            <option value="02:00:00">2 Hours</option>
+                            <option value="02:30:00">2.5 Hours</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Session Type</label>
+                        <select name="session_type" class="form-select">
+                            <option value="Practice" selected>Team Practice</option>
+                            <option value="Tactical Drill">Tactical Drill</option>
+                            <option value="Conditioning">Strength & Conditioning</option>
+                            <option value="Trial Match">Internal Trial Match</option>
+                        </select>
                     </div>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Tactical Focus Area</label>
-                    <input type="text" class="form-input" placeholder="e.g. Set Pieces, Counter-Pressing, Zone Defense…" value="Defensive Transition & Set-Piece Drills" required>
+                    <input type="text" name="focus_area" class="form-input" placeholder="e.g. Set Pieces, Counter-Pressing, Zone Defense…" value="Defensive Transition & Set-Piece Drills" required>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Session Notes & Equipment Needs</label>
-                    <textarea class="form-textarea" placeholder="Detailed coaching notes, required cones, bibs, water bottles…" rows="3">Bring full match kit, shin guards, and hydration fluids. Video tactical review starts 15 mins prior.</textarea>
+                    <textarea name="notes" class="form-textarea" placeholder="Detailed coaching notes, required cones, bibs, water bottles…" rows="3">Bring full match kit, shin guards, and hydration fluids. Video tactical review starts 15 mins prior.</textarea>
                 </div>
             </div>
             <div class="modal-footer">
@@ -471,6 +420,122 @@ $mockAthletes = [
                 <button type="submit" class="btn btn-teal">
                     <span class="material-symbols-outlined" style="font-size: 16px;">check</span>
                     Schedule Session
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL: Edit Training Session Modal (UPDATE) -->
+<div class="modal-overlay" id="editSessionModal">
+    <div class="modal" style="width: 520px;">
+        <div class="modal-header">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="material-symbols-outlined" style="color: var(--accent); font-size: 22px;">edit_calendar</span>
+                <span class="modal-title" id="editModalHeading">Edit Training Session</span>
+            </div>
+            <button type="button" class="modal-close" onclick="closeModal('editSessionModal')">&times;</button>
+        </div>
+        <form action="../controllers/CoachController.php?action=update_session" method="POST">
+            <input type="hidden" name="session_id" id="editSessionId">
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Sport Discipline</label>
+                        <select name="sport_id" id="editSportId" class="form-select" required>
+                            <?php foreach ($allSports as $sp): ?>
+                                <option value="<?= $sp['sport_id'] ?>">
+                                    <?= htmlspecialchars($sp['sport_name']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Venue / Facility</label>
+                        <select name="facility_id" id="editFacilityId" class="form-select" required>
+                            <?php foreach ($allFacilities as $fac): ?>
+                                <option value="<?= $fac['facility_id'] ?>">
+                                    <?= htmlspecialchars($fac['facility_name']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Session Date</label>
+                        <input type="date" name="session_date" id="editSessionDate" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Start Time</label>
+                        <input type="time" name="start_time" id="editStartTime" class="form-input" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Duration (HH:MM)</label>
+                        <input type="text" name="duration_minutes" id="editDuration" class="form-input" value="01:30:00" placeholder="01:30:00">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Session Type</label>
+                        <select name="session_type" id="editSessionType" class="form-select">
+                            <option value="Practice">Practice</option>
+                            <option value="Conditioning">Conditioning</option>
+                            <option value="Match Simulation">Match Simulation</option>
+                            <option value="Recovery">Recovery</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Tactical Focus Area</label>
+                    <input type="text" name="focus_area" id="editFocusArea" class="form-input" placeholder="e.g. Set Pieces, Counter-Pressing…" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Session Notes & Equipment</label>
+                    <textarea name="notes" id="editNotes" class="form-textarea" rows="3" placeholder="Coaching guidelines, required gear…"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeModal('editSessionModal')">Cancel</button>
+                <button type="submit" class="btn btn-teal">
+                    <span class="material-symbols-outlined" style="font-size: 16px;">save</span>
+                    Update Session
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL: Delete Session Confirmation Modal (DELETE) -->
+<div class="modal-overlay" id="deleteSessionModal">
+    <div class="modal" style="width: 440px;">
+        <div class="modal-header">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="material-symbols-outlined" style="color: #DC2626; font-size: 22px;">warning</span>
+                <span class="modal-title">Cancel Training Session</span>
+            </div>
+            <button type="button" class="modal-close" onclick="closeModal('deleteSessionModal')">&times;</button>
+        </div>
+        <form action="../controllers/CoachController.php?action=delete_session" method="POST">
+            <input type="hidden" name="session_id" id="deleteSessionId">
+            <div class="modal-body">
+                <p style="font-size: 14px; color: var(--text-1); line-height: 1.5; margin-bottom: 12px;">
+                    Are you sure you want to permanently cancel and remove <strong id="deleteSessionLabel">this session</strong>?
+                </p>
+                <div style="background: #FEF2F2; border: 1px solid #FECACA; border-radius: 6px; padding: 10px 14px; font-size: 12.5px; color: #991B1B; line-height: 1.4;">
+                    <span class="material-symbols-outlined" style="font-size: 15px; vertical-align: middle;">info</span>
+                    All recorded attendance logs for this session will also be deleted from the database.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeModal('deleteSessionModal')">Keep Session</button>
+                <button type="submit" class="btn btn-danger">
+                    <span class="material-symbols-outlined" style="font-size: 16px;">delete_forever</span>
+                    Confirm Cancellation
                 </button>
             </div>
         </form>
@@ -490,12 +555,13 @@ $mockAthletes = [
             </div>
             <button type="button" class="modal-close" onclick="closeModal('attendanceModal')">&times;</button>
         </div>
-        <form onsubmit="event.preventDefault(); alert('Attendance logs updated and synchronized with sports registry!'); closeModal('attendanceModal');">
+        <form action="../controllers/CoachController.php?action=save_attendance" method="POST">
+            <input type="hidden" name="session_id" id="formAttSessionId" value="<?= $selectedSessionId ?>">
             <div class="modal-body" style="padding: 12px 18px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; background: #F8FAFC; border: 1px solid var(--border); border-radius: var(--r); padding: 8px 14px; margin-bottom: 12px;">
                     <div style="font-size: 12.5px; color: var(--text-2);">
-                        Target Sport: <strong id="attSportLabel" style="color: var(--text);">Football</strong> &nbsp;|&nbsp; 
-                        Session ID: <strong id="attSessionId" style="font-family: monospace; color: var(--accent-dark);">TRN-201</strong>
+                        Target Sport: <strong id="attSportLabel" style="color: var(--text);"><?= htmlspecialchars($trainingSessions[0]['sport'] ?? 'Football') ?></strong> &nbsp;|&nbsp; 
+                        Session ID: <strong id="attSessionId" style="font-family: monospace; color: var(--accent-dark);"><?= htmlspecialchars($trainingSessions[0]['id'] ?? 'TRN-' . $selectedSessionId) ?></strong>
                     </div>
                     <div style="display: flex; gap: 6px;">
                         <button type="button" class="btn btn-outline btn-sm" onclick="markAllAttendance('Present')">Mark All Present</button>
@@ -506,46 +572,45 @@ $mockAthletes = [
                     <table class="dash-table data-table" style="font-size: 13px;">
                         <thead>
                             <tr>
-                                <th>Jersey & Name</th>
+                                <th>Athlete & Reg No</th>
                                 <th>Faculty</th>
-                                <th>Position</th>
-                                <th>Med Status</th>
+                                <th>Medical Status</th>
                                 <th style="text-align: center;">Attendance Status</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <?php foreach ($mockAthletes as $i => $ath): 
-                                $medClass = ($ath['med_status'] === 'Fit') ? 'badge-success' : (($ath['med_status'] === 'Under Review') ? 'badge-warning' : 'badge-danger');
+                            <?php foreach ($attendanceRoster as $ath): 
+                                $medClass = ($ath['medical_status'] === 'Fit to Compete') ? 'badge-success' : (($ath['medical_status'] === 'Conditional Clearance') ? 'badge-warning' : 'badge-danger');
+                                $currentStatus = $ath['status'] ?? 'Present';
                             ?>
                             <tr>
                                 <td>
                                     <div class="cell-flex">
                                         <span class="mini-avatar" style="background: var(--side-bg); color: #fff; font-size: 11px;">
-                                            <?= htmlspecialchars($ath['jersey']) ?>
+                                            <?= htmlspecialchars(substr($ath['full_name'], 0, 2)) ?>
                                         </span>
                                         <div>
-                                            <span class="cell-main"><?= htmlspecialchars($ath['name']) ?></span>
-                                            <span class="cell-sub"><?= htmlspecialchars($ath['id']) ?></span>
+                                            <span class="cell-main"><?= htmlspecialchars($ath['full_name']) ?></span>
+                                            <span class="cell-sub"><?= htmlspecialchars($ath['index_number']) ?></span>
                                         </div>
                                     </div>
                                 </td>
                                 <td><span class="badge badge-subtle"><?= htmlspecialchars($ath['faculty']) ?></span></td>
-                                <td><span style="font-weight: 500;"><?= htmlspecialchars($ath['position']) ?></span></td>
                                 <td>
-                                    <span class="badge <?= $medClass ?>"><?= htmlspecialchars($ath['med_status']) ?></span>
+                                    <span class="badge <?= $medClass ?>"><?= htmlspecialchars($ath['medical_status']) ?></span>
                                 </td>
                                 <td style="text-align: center;">
                                     <div class="attendance-radio-group">
                                         <label>
-                                            <input type="radio" name="att_status_<?= $i ?>" value="Present" <?= ($ath['default_attendance'] === 'Present') ? 'checked' : '' ?>>
+                                            <input type="radio" name="attendance[<?= $ath['athlete_id'] ?>]" value="Present" <?= ($currentStatus === 'Present') ? 'checked' : '' ?>>
                                             <span>Present</span>
                                         </label>
                                         <label>
-                                            <input type="radio" name="att_status_<?= $i ?>" value="Absent" <?= ($ath['default_attendance'] === 'Absent') ? 'checked' : '' ?>>
+                                            <input type="radio" name="attendance[<?= $ath['athlete_id'] ?>]" value="Absent" <?= ($currentStatus === 'Absent') ? 'checked' : '' ?>>
                                             <span>Absent</span>
                                         </label>
                                         <label>
-                                            <input type="radio" name="att_status_<?= $i ?>" value="Excused" <?= ($ath['default_attendance'] === 'Excused') ? 'checked' : '' ?>>
+                                            <input type="radio" name="attendance[<?= $ath['athlete_id'] ?>]" value="Excused" <?= ($currentStatus === 'Excused') ? 'checked' : '' ?>>
                                             <span>Excused</span>
                                         </label>
                                     </div>
@@ -582,14 +647,50 @@ window.addEventListener('click', function(e) {
     }
 });
 
+// Open Edit Modal with session payload (CRUD: UPDATE)
+function openEditModal(sess) {
+    document.getElementById('editSessionId').value = sess.session_id || '';
+    document.getElementById('editModalHeading').textContent = 'Edit Session (' + (sess.id || ('TRN-' + sess.session_id)) + ')';
+    if (sess.sport_id) document.getElementById('editSportId').value = sess.sport_id;
+    if (sess.facility_id) document.getElementById('editFacilityId').value = sess.facility_id;
+    if (sess.session_date) document.getElementById('editSessionDate').value = sess.session_date;
+    if (sess.start_time) document.getElementById('editStartTime').value = sess.start_time;
+    if (sess.duration_minutes) document.getElementById('editDuration').value = sess.duration_minutes;
+    if (sess.session_type) document.getElementById('editSessionType').value = sess.session_type;
+    document.getElementById('editFocusArea').value = sess.focus_area || '';
+    document.getElementById('editNotes').value = sess.notes || '';
+    openModal('editSessionModal');
+}
+
+// Open Delete Modal with session payload (CRUD: DELETE)
+function openDeleteModal(sess) {
+    document.getElementById('deleteSessionId').value = sess.session_id || '';
+    document.getElementById('deleteSessionLabel').textContent = (sess.id || ('TRN-' + sess.session_id)) + ' on ' + (sess.display_date || sess.session_date);
+    openModal('deleteSessionModal');
+}
+
 // Open Attendance Modal with session payload
 function openAttendanceModal(sess) {
-    document.getElementById('attModalTitle').textContent = 'Session Attendance Roster (' + sess.id + ')';
-    document.getElementById('attModalSub').textContent = sess.focus_area + ' • ' + sess.venue + ' (' + sess.display_date + ')';
-    document.getElementById('attSessionId').textContent = sess.id;
-    document.getElementById('attSportLabel').textContent = sess.sport;
+    if (sess.session_id && <?= (int)$selectedSessionId ?> !== parseInt(sess.session_id)) {
+        window.location.href = 'coach_training_sessions.php?session_id=' + sess.session_id + '#attendance';
+        return;
+    }
+    document.getElementById('attModalTitle').textContent = 'Session Attendance Roster (' + (sess.id || ('TRN-' + sess.session_id)) + ')';
+    document.getElementById('attModalSub').textContent = (sess.focus_area || '') + ' • ' + (sess.venue || '') + ' (' + (sess.display_date || '') + ')';
+    document.getElementById('attSessionId').textContent = sess.id || ('TRN-' + sess.session_id);
+    document.getElementById('attSportLabel').textContent = sess.sport || 'Sports Team';
+    var formIdInput = document.getElementById('formAttSessionId');
+    if (formIdInput) {
+        formIdInput.value = sess.session_id;
+    }
     openModal('attendanceModal');
 }
+
+window.addEventListener('DOMContentLoaded', function() {
+    if (window.location.hash === '#attendance') {
+        openModal('attendanceModal');
+    }
+});
 
 // Mark All Present shortcut
 function markAllAttendance(status) {
@@ -623,6 +724,6 @@ function filterSessions(status, btn) {
     });
 }
 </script>
-
+<script src="../assets/js/dashboard.js"></script>
 </body>
 </html>

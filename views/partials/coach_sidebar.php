@@ -36,5 +36,14 @@ $currentPage = basename($_SERVER['PHP_SELF']);
             <span class="material-symbols-outlined">scoreboard</span>
             Fixtures & Results
         </a>
+
+        <div class="sidebar-section-label" style="margin-top: 24px;">My Account</div>
+
+        <!-- 5. Profile & Settings -->
+        <a href="profile.php"
+           class="sidebar-link <?= ($currentPage === 'profile.php') ? 'active' : '' ?>">
+            <span class="material-symbols-outlined">manage_accounts</span>
+            Profile &amp; Settings
+        </a>
     </nav>
 </aside>

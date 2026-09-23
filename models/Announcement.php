@@ -239,9 +239,34 @@ class Announcement {
     }
 
     /**
-     * Get active announcements for top-bar universal notification bell
+     * Get active announcements for top-bar notification bell filtered by user role
+     *
+     * @param int $limit Maximum notifications to fetch
+     * @param string|null $userRole The role of the logged-in user (Athlete, Coach, TIC, etc.)
+     * @return array List of relevant active announcements
      */
-    public function getActiveForNotifications($limit = 8) {
+    public function getActiveForNotifications($limit = 10, $userRole = null) {
+        $allowedAudiences = ['All Users'];
+
+        if (!empty($userRole)) {
+            $roleLower = strtolower(trim($userRole));
+            if ($roleLower === 'athlete') {
+                $allowedAudiences[] = 'Student Athletes';
+            } elseif ($roleLower === 'coach') {
+                $allowedAudiences[] = 'Coaches & Staff';
+            } elseif ($roleLower === 'tic') {
+                $allowedAudiences[] = 'TIC';
+                $allowedAudiences[] = 'Coaches & Staff';
+            } elseif (str_contains($roleLower, 'med') || str_contains($roleLower, 'physio')) {
+                $allowedAudiences[] = 'Medical Staff';
+            } elseif (in_array($roleLower, ['president', 'system_admin', 'admin'])) {
+                // Executives and admins can inspect all broadcasts
+                $allowedAudiences = ['All Users', 'Student Athletes', 'Coaches & Staff', 'Medical Staff', 'TIC'];
+            }
+        }
+
+        $placeholders = implode(',', array_fill(0, count($allowedAudiences), '?'));
+
         $sql = "
             SELECT 
                 a.announcement_id,
@@ -254,6 +279,7 @@ class Announcement {
             FROM announcements a
             LEFT JOIN user u ON a.published_by_user_id = u.user_id
             WHERE a.status = 'Active'
+              AND a.target_audience IN ($placeholders)
             ORDER BY 
                 CASE WHEN a.priority = 'Urgent' THEN 1
                      WHEN a.priority = 'Important' THEN 2
@@ -261,7 +287,8 @@ class Announcement {
                 a.created_at DESC
             LIMIT " . (int)$limit;
 
-        $stmt = $this->db->query($sql);
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($allowedAudiences);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }

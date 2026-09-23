@@ -1,117 +1,45 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
+require_once __DIR__ . '/../config/auth_guard.php';
+requireRole('Coach');
+
+require_once __DIR__ . '/../models/Coach.php';
+$coachModel = new Coach();
+
+$equipmentRequests = $coachModel->getEquipmentRequisitions();
+$allEquipment = $coachModel->getAllEquipment();
+
+$pendingCount = 0;
+$checkedOutCount = 0;
+$returnedCount = 0;
+
+foreach ($equipmentRequests as &$req) {
+    $sportLower = strtolower($req['sport'] ?? '');
+    if (str_contains($sportLower, 'cricket')) $req['sport_icon'] = 'sports_cricket';
+    elseif (str_contains($sportLower, 'basket')) $req['sport_icon'] = 'sports_basketball';
+    elseif (str_contains($sportLower, 'badminton')) $req['sport_icon'] = 'sports_tennis';
+    elseif (str_contains($sportLower, 'track')) $req['sport_icon'] = 'timer';
+    elseif (str_contains($sportLower, 'swim')) $req['sport_icon'] = 'pool';
+    else $req['sport_icon'] = 'sports_soccer';
+
+    $req['notes'] = ($req['tic_status'] === 'Approved') ? 'Approved and verified by TIC inventory controller.' : 'Pending warehouse clearance.';
+
+    if ($req['tic_status'] === 'Pending') $pendingCount++;
+    if (str_contains($req['current_status'], 'Checked Out') || str_contains($req['current_status'], 'Issued')) $checkedOutCount++;
+    if ($req['current_status'] === 'Returned') $returnedCount++;
 }
-if (!isset($_SESSION['role'])) {
-    $_SESSION['role'] = 'Coach';
-}
-if (!isset($_SESSION['username'])) {
-    $_SESSION['username'] = 'Coach Silva';
-}
+unset($req);
+
+$stats = [
+    'total_requests'   => count($equipmentRequests),
+    'pending_approval' => $pendingCount,
+    'checked_out'      => $checkedOutCount,
+    'returned'         => $returnedCount
+];
 
 $pageTitle = 'Team Equipment Requisitions';
-
-// Realistic Mock Data for Equipment Requests
-$stats = [
-    'total_requests' => 14,
-    'pending_approval' => 3,
-    'checked_out' => 8,
-    'returned' => 3
-];
-
-$equipmentRequests = [
-    [
-        'req_id' => 'REQ-EQ-104',
-        'sport' => 'Football',
-        'sport_icon' => 'sports_soccer',
-        'item_name' => 'Football Training Cones & Space Markers',
-        'quantity' => 25,
-        'req_date' => '2026-09-22',
-        'return_date' => '2026-09-29',
-        'tic_status' => 'Pending',
-        'current_status' => 'In Review',
-        'purpose' => 'Preparation drills and agility space conditioning for upcoming Inter-Faculty Derby vs Faculty of Science.',
-        'notes' => 'Awaiting warehouse inspection from TIC Officer Mr. Wickramasinghe.'
-    ],
-    [
-        'req_id' => 'REQ-EQ-103',
-        'sport' => 'Basketball',
-        'sport_icon' => 'sports_basketball',
-        'item_name' => 'Reversible Scrimmage Bibs (Set of 20 - Neon/Navy)',
-        'quantity' => 20,
-        'req_date' => '2026-09-21',
-        'return_date' => '2026-09-28',
-        'tic_status' => 'Pending',
-        'current_status' => 'In Review',
-        'purpose' => 'Tactical half-court offensive transition drills ahead of SLUG tournament opening.',
-        'notes' => 'Submitted for TIC clearance. Stock availability confirmed in Indoor Warehouse.'
-    ],
-    [
-        'req_id' => 'REQ-EQ-102',
-        'sport' => 'Football',
-        'sport_icon' => 'sports_soccer',
-        'item_name' => 'Match Grade FIFA Pro Footballs (Size 5)',
-        'quantity' => 6,
-        'req_date' => '2026-09-18',
-        'return_date' => '2026-09-25',
-        'tic_status' => 'Approved',
-        'current_status' => 'Issued & Active',
-        'purpose' => 'High-velocity shooting drills and competitive match simulation scrimmage.',
-        'notes' => 'Checked out by Coach Silva on Sep 18. Checked and pressurized by TIC staff.'
-    ],
-    [
-        'req_id' => 'REQ-EQ-101',
-        'sport' => 'Cricket',
-        'sport_icon' => 'sports_cricket',
-        'item_name' => 'SG Tournament Leather Cricket Balls (Box of 12)',
-        'quantity' => 12,
-        'req_date' => '2026-09-17',
-        'return_date' => '2026-09-26',
-        'tic_status' => 'Approved',
-        'current_status' => 'Issued & Active',
-        'purpose' => 'Turf pitch match simulation against Moratuwa and intense net bowling sessions.',
-        'notes' => 'Issued from Main Store. Maintained in equipment locker under coach supervision.'
-    ],
-    [
-        'req_id' => 'REQ-EQ-100',
-        'sport' => 'Badminton',
-        'sport_icon' => 'sports_tennis',
-        'item_name' => 'Yonex Aerosensa 30 Feather Shuttlecock Tubes',
-        'quantity' => 8,
-        'req_date' => '2026-09-15',
-        'return_date' => '2026-09-20',
-        'tic_status' => 'Approved',
-        'current_status' => 'Returned',
-        'purpose' => 'National University Invitational trials and singles ranking knockout stage.',
-        'notes' => 'Returned on Sep 20. 2 tubes unopened and verified by TIC inventory controller.'
-    ],
-    [
-        'req_id' => 'REQ-EQ-099',
-        'sport' => 'Track & Field',
-        'sport_icon' => 'timer',
-        'item_name' => 'Seiko Digital Timing Stopwatches & Split Timers',
-        'quantity' => 4,
-        'req_date' => '2026-09-12',
-        'return_date' => '2026-09-16',
-        'tic_status' => 'Rejected',
-        'current_status' => 'Denied',
-        'purpose' => 'Athletics sprint acceleration time trials and relay baton exchange recording.',
-        'notes' => 'Denied by TIC: Equipment currently reserved for Inter-University Games Secretariat.'
-    ],
-    [
-        'req_id' => 'REQ-EQ-098',
-        'sport' => 'Football',
-        'sport_icon' => 'sports_soccer',
-        'item_name' => 'Quick-Foot Speed Agility Ladders (6m)',
-        'quantity' => 4,
-        'req_date' => '2026-09-10',
-        'return_date' => '2026-09-15',
-        'tic_status' => 'Approved',
-        'current_status' => 'Returned',
-        'purpose' => 'Pre-season athletic conditioning and footwork reactivity training.',
-        'notes' => 'Returned in immaculate condition. Cleared in warehouse stock logs.'
-    ]
-];
+$flashSuccess = $_SESSION['flash_success'] ?? null;
+$flashError   = $_SESSION['flash_error'] ?? null;
+unset($_SESSION['flash_success'], $_SESSION['flash_error']);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -131,7 +59,7 @@ $equipmentRequests = [
         .dash-table thead th {
             background: var(--side-bg);
             color: #CBD5E1;
-            padding: 11px 12px;
+            padding: 14px 16px;
             font-size: 12px;
             font-weight: 700;
             text-transform: uppercase;
@@ -141,7 +69,7 @@ $equipmentRequests = [
             vertical-align: middle;
         }
         .dash-table tbody td {
-            padding: 11px 12px;
+            padding: 14px 16px;
             border-bottom: 1px solid var(--border);
             vertical-align: middle;
             color: var(--text);
@@ -198,6 +126,20 @@ $equipmentRequests = [
                 </button>
             </div>
         </div>
+
+        <?php if (!empty($flashSuccess)): ?>
+            <div style="background: #F0FDF4; border: 1px solid #BBF7D0; color: #166534; padding: 12px 18px; border-radius: var(--r); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; font-size: 13.5px;">
+                <span class="material-symbols-outlined" style="color: #16A34A; font-size: 20px;">check_circle</span>
+                <span><?= htmlspecialchars($flashSuccess) ?></span>
+            </div>
+        <?php endif; ?>
+
+        <?php if (!empty($flashError)): ?>
+            <div style="background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B; padding: 12px 18px; border-radius: var(--r); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; font-size: 13.5px;">
+                <span class="material-symbols-outlined" style="color: #DC2626; font-size: 20px;">error</span>
+                <span><?= htmlspecialchars($flashError) ?></span>
+            </div>
+        <?php endif; ?>
 
         <!-- Top Stat Cards (Grid-4) -->
         <div class="grid-4">
@@ -290,6 +232,24 @@ $equipmentRequests = [
                         </tr>
                     </thead>
                     <tbody>
+                        <?php if (empty($equipmentRequests)): ?>
+                        <tr>
+                            <td colspan="8" style="text-align: center; padding: 48px 20px;">
+                                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                                    <div style="width: 56px; height: 56px; border-radius: 50%; background: #F1F5F9; color: var(--text-3); display: flex; align-items: center; justify-content: center; margin-bottom: 14px;">
+                                        <span class="material-symbols-outlined" style="font-size: 28px;">inventory_2</span>
+                                    </div>
+                                    <h4 style="font-size: 16px; font-weight: 700; color: var(--text-1); margin-bottom: 6px;">No Equipment Requisitions Found</h4>
+                                    <p style="font-size: 13px; color: var(--text-3); max-width: 420px; line-height: 1.5; margin-bottom: 16px;">
+                                        You haven't submitted any gear requisitions yet. Use the button above to request sports equipment from the TIC warehouse.
+                                    </p>
+                                    <button type="button" class="btn btn-teal" onclick="openModal('newReqModal')">
+                                        <span class="material-symbols-outlined" style="font-size: 18px;">add_box</span> + New Equipment Requisition
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <?php else: ?>
                         <?php foreach ($equipmentRequests as $req): 
                             // Approval Badge
                             $approvalBadge = 'badge-warning';
@@ -370,6 +330,7 @@ $equipmentRequests = [
                             </td>
                         </tr>
                         <?php endforeach; ?>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>
@@ -388,42 +349,24 @@ $equipmentRequests = [
             </div>
             <button type="button" class="modal-close" onclick="closeModal('newEquipModal')">&times;</button>
         </div>
-        <form onsubmit="event.preventDefault(); alert('Requisition request submitted to TIC warehouse successfully!'); closeModal('newEquipModal');">
+        <form action="../controllers/CoachController.php?action=request_equipment" method="POST">
             <div class="modal-body">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">Target Sport Discipline</label>
-                        <select class="form-select" id="targetSport" required>
-                            <option value="">Select Sport…</option>
-                            <option value="Football" selected>Football</option>
-                            <option value="Basketball">Basketball</option>
-                            <option value="Cricket">Cricket</option>
-                            <option value="Badminton">Badminton</option>
-                            <option value="Track & Field">Track & Field</option>
-                            <option value="Swimming">Swimming</option>
-                            <option value="Rugby">Rugby</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Equipment Item</label>
-                        <select class="form-select" id="equipItem" required>
-                            <option value="">Choose item…</option>
-                            <option value="Training Balls">Training Balls (Set of 10)</option>
-                            <option value="Bibs / Pinnies">Practice Bibs / Pinnies (Set of 20)</option>
-                            <option value="Cones & Space Markers">Cones & Space Markers</option>
-                            <option value="Goal Nets">Match Regulation Goal Nets</option>
-                            <option value="Corner Flags">Spring-Loaded Corner Flags (Set of 4)</option>
-                            <option value="Agility Ladders">6-Meter Agility Ladders</option>
-                            <option value="Digital Stopwatches">Digital Memory Stopwatches</option>
-                            <option value="Helmets & Protective Pads">Batting Helmets & Pads</option>
-                        </select>
-                    </div>
+                <div class="form-group">
+                    <label class="form-label">Available Equipment Item</label>
+                    <select name="equipment_id" class="form-select" id="equipItem" required>
+                        <option value="">Choose item from stock…</option>
+                        <?php foreach ($allEquipment as $eq): ?>
+                            <option value="<?= $eq['equipment_id'] ?>">
+                                <?= htmlspecialchars($eq['item_name']) ?> (Available Stock: <?= (int)$eq['quantity_in_stock'] ?>)
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Quantity Required</label>
-                        <input type="number" class="form-input" id="reqQty" min="1" max="100" value="10" required>
+                        <input type="number" name="quantity" class="form-input" id="reqQty" min="1" max="100" value="5" required>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Warehouse Storage</label>
@@ -433,18 +376,18 @@ $equipmentRequests = [
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label class="form-label">Required Date</label>
-                        <input type="date" class="form-input" id="reqDate" value="<?= date('Y-m-d') ?>" required>
+                        <label class="form-label">Requisition Date</label>
+                        <input type="date" class="form-input" id="reqDate" value="<?= date('Y-m-d') ?>" readonly style="background: var(--bg);">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Expected Return Date</label>
-                        <input type="date" class="form-input" id="returnDate" value="<?= date('Y-m-d', strtotime('+7 days')) ?>" required>
+                        <input type="date" name="return_date" class="form-input" id="returnDate" value="<?= date('Y-m-d', strtotime('+7 days')) ?>" required>
                     </div>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Purpose / Session Details</label>
-                    <textarea class="form-textarea" id="reqPurpose" placeholder="e.g. Preparation scrimmage for SLUG semi-final against University of Moratuwa..." required rows="3">Preparation scrimmage and tactical set-piece drills for SLUG tournament.</textarea>
+                    <textarea name="purpose" class="form-textarea" id="reqPurpose" placeholder="e.g. Preparation scrimmage for SLUG semi-final against University of Moratuwa..." required rows="3">Preparation scrimmage and tactical set-piece drills for varsity tournament.</textarea>
                 </div>
             </div>
             <div class="modal-footer">
@@ -578,6 +521,6 @@ function filterByStatus(status, btn) {
     });
 }
 </script>
-
+<script src="../assets/js/dashboard.js"></script>
 </body>
 </html>
