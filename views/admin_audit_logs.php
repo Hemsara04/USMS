@@ -1,4 +1,8 @@
-<?php $activeAdminPage = 'audit'; ?>
+<?php 
+require_once __DIR__ . '/../config/auth_guard.php';
+requireRole(['System_Admin', 'Admin']);
+$activeAdminPage = 'audit'; 
+?>
 <!doctype html>
 <html lang="en"><head>
     <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
@@ -7,7 +11,7 @@
 </head><body><div class="admin-shell">
 <?php require __DIR__ . '/partials/admin_sidebar.php'; ?>
 <main class="admin-main">
-    <header class="admin-topbar"><label class="admin-search"><span class="material-symbols-outlined">search</span><input type="search" placeholder="Search activity..." aria-label="Search audit activity"></label><div class="admin-top-actions"><button class="admin-icon-button" aria-label="Notifications"><span class="material-symbols-outlined">notifications</span></button><button class="admin-logout"><span class="material-symbols-outlined">logout</span> Logout</button></div></header>
+    <header class="admin-topbar"><label class="admin-search"><span class="material-symbols-outlined">search</span><input type="search" placeholder="Search activity..." aria-label="Search audit activity"></label><div class="admin-top-actions"><button class="admin-icon-button" aria-label="Notifications"><span class="material-symbols-outlined">notifications</span></button><a href="../controllers/AuthController.php?action=logout" class="admin-logout" style="text-decoration:none; color:inherit;"><span class="material-symbols-outlined">logout</span> Logout</a></div></header>
     <section class="admin-content">
         <div class="admin-page-header"><div><h1>Audit Logs</h1><p>Review security-sensitive activity, configuration changes, and administrator actions across the USMS platform.</p></div><button class="admin-secondary-button"><span class="material-symbols-outlined">download</span> Export Logs</button></div>
         <div class="audit-overview"><article><span>Events Today</span><strong>386</strong><small>Normal activity volume</small></article><article><span>Admin Changes</span><strong>42</strong><small>7 unique administrators</small></article><article><span>Security Alerts</span><strong class="danger-text">3</strong><small class="danger-text">Requires review</small></article><article class="dark"><span>Retention</span><strong>365 days</strong><small>Policy-compliant storage</small></article></div>

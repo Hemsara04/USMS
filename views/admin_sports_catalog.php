@@ -1,4 +1,8 @@
-<?php $activeAdminPage = 'sports'; ?>
+<?php 
+require_once __DIR__ . '/../config/auth_guard.php';
+requireRole(['System_Admin', 'Admin']);
+$activeAdminPage = 'sports'; 
+?>
 <!doctype html>
 <html lang="en">
 <head>
@@ -9,7 +13,7 @@
 <body><div class="admin-shell">
 <?php require __DIR__ . '/partials/admin_sidebar.php'; ?>
 <main class="admin-main">
-    <header class="admin-topbar"><label class="admin-search"><span class="material-symbols-outlined">search</span><input type="search" placeholder="Search sports..." aria-label="Search sports"></label><div class="admin-top-actions"><button class="admin-icon-button" aria-label="Notifications"><span class="material-symbols-outlined">notifications</span></button><button class="admin-logout"><span class="material-symbols-outlined">logout</span> Logout</button></div></header>
+    <header class="admin-topbar"><label class="admin-search"><span class="material-symbols-outlined">search</span><input type="search" placeholder="Search sports..." aria-label="Search sports"></label><div class="admin-top-actions"><button class="admin-icon-button" aria-label="Notifications"><span class="material-symbols-outlined">notifications</span></button><a href="../controllers/AuthController.php?action=logout" class="admin-logout" style="text-decoration:none; color:inherit;"><span class="material-symbols-outlined">logout</span> Logout</a></div></header>
     <section class="admin-content">
         <div class="admin-page-header"><div><h1>Sports Catalog</h1><p>Manage university sports, athletic categories, roster types, and availability across the institution.</p></div><div class="header-actions"><button class="admin-secondary-button"><span class="material-symbols-outlined">download</span> Export List</button><button class="admin-primary-button"><span class="material-symbols-outlined">add</span> Add New Sport</button></div></div>
         <div class="catalog-stats"><article><span>Total Sports</span><strong>24</strong><small>+2 this year</small></article><article><span>Active Programs</span><strong>21</strong><small>87.5% of catalog</small></article><article class="dark"><span>Most Popular</span><strong>Football</strong><small>186 registered athletes</small></article></div>

@@ -1,13 +1,14 @@
 <?php
 $activeAdminPage = $activeAdminPage ?? '';
-$adminName = $adminName ?? 'Admin User';
+$adminUsername = $_SESSION['username'] ?? 'Admin';
+$adminName = !empty($_SESSION['username']) ? ucwords(str_replace('_', ' ', $_SESSION['username'])) : ($adminName ?? 'System Administrator');
 
 $adminNavigation = [
-    'dashboard' => ['label' => 'Dashboard', 'icon' => 'dashboard', 'href' => '#'],
-    'users' => ['label' => 'User Management', 'icon' => 'group', 'href' => 'admin_user_management.php'],
-    'sports' => ['label' => 'Sports Catalog', 'icon' => 'sports_basketball', 'href' => 'admin_sports_catalog.php'],
+    'users'   => ['label' => 'User Management', 'icon' => 'group', 'href' => 'admin_user_management.php'],
+    'sports'  => ['label' => 'Sports Catalog', 'icon' => 'sports_basketball', 'href' => 'admin_sports_catalog.php'],
     'seasons' => ['label' => 'Seasons Setup', 'icon' => 'calendar_month', 'href' => 'admin_seasons_setup.php'],
-    'audit' => ['label' => 'Audit Logs', 'icon' => 'history', 'href' => 'admin_audit_logs.php'],
+    'audit'   => ['label' => 'Audit Logs', 'icon' => 'history', 'href' => 'admin_audit_logs.php'],
+    'profile' => ['label' => 'My Profile', 'icon' => 'manage_accounts', 'href' => 'profile.php'],
 ];
 ?>
 
@@ -104,12 +105,12 @@ $adminNavigation = [
         <?php endforeach; ?>
     </nav>
 
-    <div class="admin-profile">
+    <a href="profile.php" class="admin-profile" style="text-decoration:none; color:inherit; cursor:pointer;" title="View &amp; Edit Profile">
         <span class="admin-avatar material-symbols-outlined" aria-hidden="true">person</span>
         <div>
             <strong><?= htmlspecialchars($adminName) ?></strong>
             <span>Global Administrator</span>
         </div>
-    </div>
+    </a>
 </aside>
 

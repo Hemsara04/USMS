@@ -46,11 +46,15 @@ class AuthController {
         }
 
         // Optional check if selected role matches DB role
-        if (!empty($selectedRole) && strtolower($selectedRole) !== strtolower($user['role'])) {
-            // If they picked TIC but account is Medical_Officer or vice-versa
-            $_SESSION['error'] = 'Role mismatch: Your account role is ' . htmlspecialchars($user['role']) . '.';
-            header('Location: ../views/login.php');
-            exit;
+        if (!empty($selectedRole)) {
+            $sel = strtolower($selectedRole);
+            $dbRole = strtolower($user['role']);
+            $isAdminMatch = ($sel === 'admin' && ($dbRole === 'system_admin' || $dbRole === 'admin'));
+            if (!$isAdminMatch && $sel !== $dbRole) {
+                $_SESSION['error'] = 'Role mismatch: Your account role is ' . htmlspecialchars($user['role']) . '.';
+                header('Location: ../views/login.php');
+                exit;
+            }
         }
 
         // Establish Session
@@ -79,6 +83,11 @@ class AuthController {
 
             case 'Coach':
                 header('Location: ../views/coach_training_sessions.php');
+                exit;
+
+            case 'System_Admin':
+            case 'Admin':
+                header('Location: ../views/admin_user_management.php');
                 exit;
 
             default:

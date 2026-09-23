@@ -39,8 +39,17 @@ function requireRole($allowedRoles) {
             case 'President':
                 header("Location: ../views/pres_announcements.php");
                 break;
+            case 'Coach':
+                header("Location: ../views/coach_training_sessions.php");
+                break;
+            case 'System_Admin':
+            case 'Admin':
+                header("Location: ../views/admin_user_management.php");
+                break;
+            case 'Athlete':
+                header("Location: ../views/athletic_regestration.php");
+                break;
             default:
-                // Fallback for other roles (can be updated as those dashboards are built)
                 header("Location: ../views/login.php");
                 break;
         }

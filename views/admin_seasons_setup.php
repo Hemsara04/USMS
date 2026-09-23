@@ -1,4 +1,8 @@
-<?php $activeAdminPage = 'seasons'; ?>
+<?php 
+require_once __DIR__ . '/../config/auth_guard.php';
+requireRole(['System_Admin', 'Admin']);
+$activeAdminPage = 'seasons'; 
+?>
 <!doctype html>
 <html lang="en"><head>
     <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
@@ -7,7 +11,7 @@
 </head><body><div class="admin-shell">
 <?php require __DIR__ . '/partials/admin_sidebar.php'; ?>
 <main class="admin-main">
-    <header class="admin-topbar"><label class="admin-search"><span class="material-symbols-outlined">search</span><input type="search" placeholder="Search seasons..." aria-label="Search seasons"></label><div class="admin-top-actions"><button class="admin-icon-button" aria-label="Notifications"><span class="material-symbols-outlined">notifications</span></button><button class="admin-logout"><span class="material-symbols-outlined">logout</span> Logout</button></div></header>
+    <header class="admin-topbar"><label class="admin-search"><span class="material-symbols-outlined">search</span><input type="search" placeholder="Search seasons..." aria-label="Search seasons"></label><div class="admin-top-actions"><button class="admin-icon-button" aria-label="Notifications"><span class="material-symbols-outlined">notifications</span></button><a href="../controllers/AuthController.php?action=logout" class="admin-logout" style="text-decoration:none; color:inherit;"><span class="material-symbols-outlined">logout</span> Logout</a></div></header>
     <section class="admin-content">
         <div class="admin-page-header"><div><h1>Seasons Setup</h1><p>Configure academic athletic terms, registration periods, and scheduling windows for every sport.</p></div><button class="admin-primary-button"><span class="material-symbols-outlined">add</span> Create Season</button></div>
         <div class="season-layout">
