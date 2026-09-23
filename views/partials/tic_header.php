@@ -27,31 +27,12 @@ if ($headerUserId) {
     }
 }
 
-// Universal Notification System: Fetch live active announcements
+// Universal Notification System: Fetch active announcements filtered by current user role
 $headerNotifs = [];
 try {
-    if (!isset($headerPdo)) {
-        require_once __DIR__ . '/../../config/db.php';
-        $headerPdo = Database::connect();
-    }
-    $notifStmt = $headerPdo->query("
-        SELECT 
-            announcement_id,
-            title,
-            content,
-            target_audience,
-            priority,
-            created_at
-        FROM announcements
-        WHERE status = 'Active'
-        ORDER BY 
-            CASE WHEN priority = 'Urgent' THEN 1
-                 WHEN priority = 'Important' THEN 2
-                 ELSE 3 END,
-            created_at DESC
-        LIMIT 15
-    ");
-    $headerNotifs = $notifStmt->fetchAll(PDO::FETCH_ASSOC);
+    require_once __DIR__ . '/../../models/Announcement.php';
+    $headerAnnModel = new Announcement();
+    $headerNotifs = $headerAnnModel->getActiveForNotifications(15, $headerRole);
 } catch (Exception $e) {
     $headerNotifs = [];
 }
@@ -140,9 +121,9 @@ $notifCount = count($headerNotifs);
 
         <!-- User Profile Popover -->
         <div class="header-dropdown-wrap">
-            <div class="user-avatar" id="profileDropdownBtn" title="My Profile" onclick="toggleHeaderDropdown('profileDropdown')">
-                <?= strtoupper(substr($headerUsername, 0, 1)) ?>
-            </div>
+            <button type="button" class="icon-btn" id="profileDropdownBtn" title="Account Profile (<?= htmlspecialchars($headerFullName) ?>)" onclick="toggleHeaderDropdown('profileDropdown')" style="border-radius: 50%;">
+                <span class="material-symbols-outlined" style="font-size: 22px;">account_circle</span>
+            </button>
             <div class="header-dropdown-menu" id="profileDropdown">
                 <div class="header-dropdown-header">
                     <span class="header-dropdown-title">Account Profile</span>
@@ -179,10 +160,10 @@ $notifCount = count($headerNotifs);
                         </div>
                     </div>
                 </div>
-                <div class="profile-popover-footer">
+                <div class="profile-popover-footer" style="padding: 10px 14px; background: #F8FAFC; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
                     <span style="font-size:11.5px; color:var(--text-3);">University of Colombo</span>
-                    <a href="../controllers/AuthController.php?action=logout" class="btn btn-danger btn-sm" style="text-decoration:none;">
-                        <span class="material-symbols-outlined" style="font-size:15px;">logout</span> Logout
+                    <a href="profile.php" class="btn btn-teal btn-sm" style="text-decoration:none; display: inline-flex; align-items: center; gap: 4px; padding: 5px 11px; font-size: 12px; font-weight: 600;">
+                        <span class="material-symbols-outlined" style="font-size:15px;">manage_accounts</span> View &amp; Edit Profile
                     </a>
                 </div>
             </div>
@@ -194,3 +175,46 @@ $notifCount = count($headerNotifs);
         </a>
     </div>
 </header>
+
+<script>
+/* Universal Header Dropdown Handler (Notifications & Profile) */
+if (typeof toggleHeaderDropdown !== 'function') {
+    function toggleHeaderDropdown(menuId) {
+        var menu = document.getElementById(menuId);
+        if (!menu) return;
+        var isOpen = menu.classList.contains('active');
+
+        // Close all header dropdowns first
+        document.querySelectorAll('.header-dropdown-menu').forEach(function(m) {
+            m.classList.remove('active');
+        });
+
+        if (!isOpen) {
+            menu.classList.add('active');
+        }
+    }
+}
+
+/* Accordion toggle for Announcement / Notification items */
+if (typeof toggleNotifAccordion !== 'function') {
+    function toggleNotifAccordion(item) {
+        var details = item.querySelector('.notif-expandable-content');
+        var arrow = item.querySelector('.notif-toggle-arrow');
+        if (!details) return;
+        var isOpen = details.style.display === 'block';
+        details.style.display = isOpen ? 'none' : 'block';
+        if (arrow) {
+            arrow.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+        }
+    }
+}
+
+// Close header dropdowns on outside click
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.header-dropdown-wrap')) {
+        document.querySelectorAll('.header-dropdown-menu.active').forEach(function(m) {
+            m.classList.remove('active');
+        });
+    }
+});
+</script>

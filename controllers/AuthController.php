@@ -77,6 +77,10 @@ class AuthController {
                 header('Location: ../views/pres_announcements.php');
                 exit;
 
+            case 'Coach':
+                header('Location: ../views/coach_training_sessions.php');
+                exit;
+
             default:
                 // For other roles or admin
                 header('Location: ../views/login.php?info=role_landing');
@@ -325,6 +329,103 @@ class AuthController {
         header('Location: ../views/login.php?logged_out=1');
         exit;
     }
+
+    /**
+     * Handle Profile Information Update (Email & Phone)
+     */
+    public function handleUpdateProfile() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: ../views/profile.php');
+            exit;
+        }
+
+        $userId = $_SESSION['user_id'] ?? null;
+        if (!$userId) {
+            header('Location: ../views/login.php');
+            exit;
+        }
+
+        $email = trim($_POST['email'] ?? '');
+        $phone = trim($_POST['phone_number'] ?? '');
+
+        if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $_SESSION['flash_error'] = 'Please provide a valid official email address.';
+            header('Location: ../views/profile.php');
+            exit;
+        }
+
+        if (empty($phone)) {
+            $_SESSION['flash_error'] = 'Contact phone number cannot be blank.';
+            header('Location: ../views/profile.php');
+            exit;
+        }
+
+        try {
+            $this->userModel->updateProfile($userId, $email, $phone);
+            $_SESSION['email'] = $email;
+            $_SESSION['flash_success'] = 'Your profile details have been successfully updated!';
+        } catch (Exception $e) {
+            $_SESSION['flash_error'] = 'Failed to update profile: ' . $e->getMessage();
+        }
+
+        header('Location: ../views/profile.php');
+        exit;
+    }
+
+    /**
+     * Handle Password Change from User Profile
+     */
+    public function handleChangePassword() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: ../views/profile.php');
+            exit;
+        }
+
+        $userId = $_SESSION['user_id'] ?? null;
+        if (!$userId) {
+            header('Location: ../views/login.php');
+            exit;
+        }
+
+        $currentPassword = $_POST['current_password'] ?? '';
+        $newPassword     = $_POST['new_password'] ?? '';
+        $confirmPassword = $_POST['confirm_password'] ?? '';
+
+        if (empty($currentPassword) || empty($newPassword) || empty($confirmPassword)) {
+            $_SESSION['flash_error'] = 'All password fields are required.';
+            header('Location: ../views/profile.php#security');
+            exit;
+        }
+
+        if ($newPassword !== $confirmPassword) {
+            $_SESSION['flash_error'] = 'New password and confirmation do not match.';
+            header('Location: ../views/profile.php#security');
+            exit;
+        }
+
+        if (strlen($newPassword) < 6) {
+            $_SESSION['flash_error'] = 'New password must be at least 6 characters long.';
+            header('Location: ../views/profile.php#security');
+            exit;
+        }
+
+        // Verify current password
+        if (!$this->userModel->verifyPassword($userId, $currentPassword)) {
+            $_SESSION['flash_error'] = 'Your current password was entered incorrectly.';
+            header('Location: ../views/profile.php#security');
+            exit;
+        }
+
+        try {
+            $this->userModel->updatePassword($userId, $newPassword);
+            $_SESSION['flash_success'] = 'Password changed successfully! Keep your credentials secure.';
+        } catch (Exception $e) {
+            $_SESSION['flash_error'] = 'Failed to update password: ' . $e->getMessage();
+        }
+
+        header('Location: ../views/profile.php#security');
+        exit;
+    }
 }
 
 // Route request to appropriate controller action
@@ -339,4 +440,9 @@ if ($action === 'login') {
     $authController->handleForgotPassword();
 } elseif ($action === 'logout') {
     $authController->handleLogout();
+} elseif ($action === 'update_profile') {
+    $authController->handleUpdateProfile();
+} elseif ($action === 'change_password') {
+    $authController->handleChangePassword();
 }
+

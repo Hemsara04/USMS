@@ -35,7 +35,7 @@ $athleteId = $athlete['athlete_id'];
 
 // 1. Training logged
 $stmtHours = $db->prepare("
-    SELECT SUM(TIME_TO_SEC(TIMEDIFF(ts.duration_minutes, ts.start_time))) / 3600 AS total_hours 
+    SELECT SUM(TIME_TO_SEC(ts.duration_minutes)) / 3600 AS total_hours 
     FROM training_attendance ta 
     JOIN training_sessions ts ON ta.session_id = ts.session_id 
     WHERE ta.athlete_id = ? AND ta.status = 'Present'

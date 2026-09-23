@@ -11,7 +11,8 @@
 
 /* Left side branding / image */
 .auth-sidebar {
-    display: none; /* Hidden on mobile by default */
+    display: none;
+    /* Hidden on mobile by default */
     background-color: var(--primary-color);
     position: relative;
     overflow: hidden;
@@ -34,8 +35,11 @@
 
 .auth-sidebar-bg {
     position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background-image: linear-gradient(180deg, rgba(10, 25, 47, 0.25) 0%, rgba(10, 25, 47, 0.4) 45%, rgba(10, 25, 47, 0.7) 100%), url('../images/auth-bg.jpg');
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: linear-gradient(180deg, rgba(10, 25, 47, 0.25) 0%, rgba(10, 25, 47, 0.4) 45%, rgba(10, 25, 47, 0.7) 100%), url('../images/auth-bg.jpeg');
     background-size: cover;
     background-position: center;
     z-index: 1;
@@ -73,7 +77,8 @@
     width: 100%;
     display: flex;
     justify-content: center;
-    align-items: center; /* Center vertically for login */
+    align-items: center;
+    /* Center vertically for login */
     padding: 2rem 1.5rem;
     background-color: var(--bg-color);
     position: relative;
@@ -163,7 +168,8 @@
 
 .auth-input {
     width: 100%;
-    padding: 0.7rem 1rem 0.7rem 2.6rem; /* Left padding for icon */
+    padding: 0.7rem 1rem 0.7rem 2.6rem;
+    /* Left padding for icon */
     border: 1px solid var(--border-color);
     border-radius: 8px;
     font-family: inherit;
@@ -177,7 +183,8 @@
     outline: none;
     border-color: var(--secondary-color);
     background-color: white;
-    box-shadow: 0 0 0 3px rgba(132, 204, 22, 0.15); /* Green glow */
+    box-shadow: 0 0 0 3px rgba(132, 204, 22, 0.15);
+    /* Green glow */
 }
 
 select.auth-input {

@@ -155,9 +155,113 @@ class User {
      * Find user by ID
      */
     public function findById($user_id) {
-        $stmt = $this->db->prepare("SELECT `user_id`, `username`, `email`, `role`, `security_question` FROM `user` WHERE `user_id` = :id LIMIT 1");
+        $stmt = $this->db->prepare("SELECT `user_id`, `username`, `email`, `phone_number`, `role`, `security_question` FROM `user` WHERE `user_id` = :id LIMIT 1");
         $stmt->execute([':id' => $user_id]);
         return $stmt->fetch();
+    }
+
+    /**
+     * Update user email and phone number
+     */
+    public function updateProfile($userId, $email, $phone) {
+        $stmt = $this->db->prepare("
+            UPDATE `user` 
+            SET `email` = :email, `phone_number` = :phone 
+            WHERE `user_id` = :id
+        ");
+        return $stmt->execute([
+            ':email' => trim($email),
+            ':phone' => trim($phone),
+            ':id'    => (int)$userId
+        ]);
+    }
+
+    /**
+     * Verify user password by user ID
+     */
+    public function verifyPassword($userId, $plainPassword) {
+        $stmt = $this->db->prepare("SELECT `password_hash` FROM `user` WHERE `user_id` = :id LIMIT 1");
+        $stmt->execute([':id' => (int)$userId]);
+        $hash = $stmt->fetchColumn();
+        if (!$hash) {
+            return false;
+        }
+        return password_verify($plainPassword, $hash);
+    }
+
+    /**
+     * Get full profile details including role-specific metadata
+     */
+    public function getFullProfileDetails($userId) {
+        $stmt = $this->db->prepare("
+            SELECT `user_id`, `username`, `email`, `phone_number`, `role`, `security_question` 
+            FROM `user` 
+            WHERE `user_id` = :id 
+            LIMIT 1
+        ");
+        $stmt->execute([':id' => (int)$userId]);
+        $user = $stmt->fetch();
+        if (!$user) {
+            return null;
+        }
+
+        $user['full_name'] = ucwords(str_replace('_', ' ', $user['username']));
+        $user['meta'] = [];
+
+        if ($user['role'] === 'Athlete') {
+            $stmtAth = $this->db->prepare("SELECT * FROM `Athletic` WHERE `user_id` = :uid LIMIT 1");
+            $stmtAth->execute([':uid' => (int)$userId]);
+            $ath = $stmtAth->fetch();
+            if ($ath) {
+                if (!empty($ath['full_name'])) {
+                    $user['full_name'] = $ath['full_name'];
+                }
+                $user['meta'] = [
+                    'Index Number'    => $ath['index_number'] ?? 'N/A',
+                    'Faculty'         => $ath['faculty'] ?? 'General',
+                    'Academic Year'   => $ath['academic_year'] ?? '2024/2025',
+                    'Medical Status'  => $ath['medical_status'] ?? 'Fit to Compete',
+                    'Blood Group'     => $ath['blood_group'] ?? 'O+',
+                    'Emergency Phone' => $ath['emergency_Contact'] ?? $user['phone_number']
+                ];
+            }
+        } elseif ($user['role'] === 'Coach') {
+            $user['meta'] = [
+                'Department'      => 'Department of Physical Education',
+                'Designation'     => 'Varsity Head Coach',
+                'Specialization'  => 'Tactical Formations & Match Operations',
+                'Station'         => 'Colombo University Gymnasium & Grounds'
+            ];
+        } elseif ($user['role'] === 'TIC') {
+            $user['meta'] = [
+                'Department'      => 'Academic Faculty / Sports Advisory Board',
+                'Designation'     => 'Teacher-in-Charge (TIC)',
+                'Oversight'       => 'Requisitions & Competitive Squad Approvals',
+                'Office'          => 'Faculty Sports Secretariat'
+            ];
+        } elseif ($user['role'] === 'Medical_Officer' || $user['role'] === 'Physiotherapist') {
+            $user['meta'] = [
+                'Clinic'          => 'University Health Centre & Sports Clinic',
+                'Designation'     => ($user['role'] === 'Medical_Officer') ? 'University Medical Officer' : 'Sports Physiotherapist',
+                'Registry'        => 'SLMC Certified Clinical Board',
+                'Scope'           => 'Biometric Screening & Rehabilitation Clearance'
+            ];
+        } elseif ($user['role'] === 'President') {
+            $user['meta'] = [
+                'Council'         => 'Amalgamated Club / Sports Council',
+                'Designation'     => 'Student Sports Council President',
+                'Tenure'          => 'Academic Year 2025/2026',
+                'Mandate'         => 'Campus-wide Sports Governance & Notice Center'
+            ];
+        } else {
+            $user['meta'] = [
+                'Division'        => 'Information & Systems Division',
+                'Designation'     => 'System Administrator',
+                'Privileges'      => 'Root Portal Configuration & Audit Control'
+            ];
+        }
+
+        return $user;
     }
 }
 ?>

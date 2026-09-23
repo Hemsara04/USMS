@@ -92,6 +92,64 @@ try {
     // Check & update equipment condition_status enum
     $db->exec("ALTER TABLE `equipment` MODIFY COLUMN `condition_status` ENUM('New','Good','Needs Repair') NOT NULL DEFAULT 'Good'");
 
+    // Update sport_application schema
+    try {
+        $db->exec("ALTER TABLE `sport_application` MODIFY COLUMN `application_id` INT(11) NOT NULL AUTO_INCREMENT");
+    } catch (Exception $e) {}
+    try {
+        $db->exec("ALTER TABLE `sport_application` MODIFY COLUMN `status` ENUM('Pending','Shortlisted','Approved','Rejected') NOT NULL DEFAULT 'Pending'");
+    } catch (Exception $e) {}
+    try {
+        $db->exec("ALTER TABLE `sport_application` MODIFY COLUMN `rejection_reason` TEXT DEFAULT NULL");
+    } catch (Exception $e) {}
+    $appStatementCol = $db->query("SHOW COLUMNS FROM `sport_application` LIKE 'statement_of_interest'")->fetch();
+    if (!$appStatementCol) {
+        $db->exec("ALTER TABLE `sport_application` ADD COLUMN `statement_of_interest` TEXT DEFAULT NULL");
+    }
+    $appDateCol = $db->query("SHOW COLUMNS FROM `sport_application` LIKE 'applied_date'")->fetch();
+    if (!$appDateCol) {
+        $db->exec("ALTER TABLE `sport_application` ADD COLUMN `applied_date` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP");
+    }
+
+    // Update training_sessions schema
+    try {
+        $db->exec("ALTER TABLE `training_sessions` MODIFY COLUMN `session_id` INT(11) NOT NULL AUTO_INCREMENT");
+    } catch (Exception $e) {}
+    try {
+        $db->exec("ALTER TABLE `training_sessions` MODIFY COLUMN `facility_id` INT(11) NULL DEFAULT NULL");
+    } catch (Exception $e) {}
+    $tsFocusCol = $db->query("SHOW COLUMNS FROM `training_sessions` LIKE 'focus_area'")->fetch();
+    if (!$tsFocusCol) {
+        $db->exec("ALTER TABLE `training_sessions` ADD COLUMN `focus_area` VARCHAR(255) NULL DEFAULT NULL AFTER `session_type`");
+    }
+    $tsNotesCol = $db->query("SHOW COLUMNS FROM `training_sessions` LIKE 'notes'")->fetch();
+    if (!$tsNotesCol) {
+        $db->exec("ALTER TABLE `training_sessions` ADD COLUMN `notes` TEXT NULL DEFAULT NULL AFTER `focus_area`");
+    }
+
+    // Update training_attendance schema
+    try {
+        $db->exec("ALTER TABLE `training_attendance` MODIFY COLUMN `attendance_id` INT(11) NOT NULL AUTO_INCREMENT");
+    } catch (Exception $e) {}
+    try {
+        $db->exec("ALTER TABLE `training_attendance` MODIFY COLUMN `status` ENUM('Present','Absent','Excused') NOT NULL DEFAULT 'Present'");
+    } catch (Exception $e) {}
+
+    // Update match_results schema
+    try {
+        $db->exec("ALTER TABLE `match_results` MODIFY COLUMN `result_id` INT(11) NOT NULL AUTO_INCREMENT");
+    } catch (Exception $e) {}
+    try {
+        $db->exec("ALTER TABLE `match_results` MODIFY COLUMN `scorers` TEXT NULL DEFAULT NULL");
+    } catch (Exception $e) {}
+    $mrReportCol = $db->query("SHOW COLUMNS FROM `match_results` LIKE 'match_report'")->fetch();
+    if (!$mrReportCol) {
+        $db->exec("ALTER TABLE `match_results` ADD COLUMN `match_report` TEXT NULL DEFAULT NULL AFTER `scorers`");
+    }
+    try {
+        $db->exec("ALTER TABLE `match_results` MODIFY COLUMN `player_ratings` LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL DEFAULT NULL");
+    } catch (Exception $e) {}
+
     echo "Schema updates complete.\n\n";
 
     // 2. Synchronize and Seed Users
@@ -107,6 +165,7 @@ try {
         ['username' => 'saman_kusum',     'email' => 'saman@uoc.ac.lk',        'phone' => '+94 11 258 1837', 'role' => 'TIC',             'sec_q' => 'What is your favorite sport?', 'sec_a' => $secAnsHash],
         ['username' => 'pres_admin',      'email' => 'president@uoc.ac.lk',    'phone' => '+94 11 258 1836', 'role' => 'President',       'sec_q' => 'What is your favorite sport?', 'sec_a' => $secAnsHash],
         ['username' => 'med_officer',     'email' => 'medical@uoc.ac.lk',      'phone' => '+94 11 258 5500', 'role' => 'Medical_Officer', 'sec_q' => 'What is your favorite sport?', 'sec_a' => $secAnsHash],
+        ['username' => 'coach_silva',     'email' => 'coach.silva@uoc.ac.lk',  'phone' => '+94 77 112 2334', 'role' => 'Coach',           'sec_q' => 'What is your favorite sport?', 'sec_a' => $secAnsHash],
         ['username' => 'coach_sunil',     'email' => 'sunil.coach@uoc.ac.lk',  'phone' => '+94 77 441 2389', 'role' => 'Coach',           'sec_q' => 'What is your favorite sport?', 'sec_a' => $secAnsHash],
         ['username' => 'coach_anura',     'email' => 'anura.coach@uoc.ac.lk',  'phone' => '+94 71 882 3490', 'role' => 'Coach',           'sec_q' => 'What is your favorite sport?', 'sec_a' => $secAnsHash],
         ['username' => 'coach_pradeep',   'email' => 'pradeep.coach@uoc.ac.lk','phone' => '+94 76 993 4501', 'role' => 'Coach',           'sec_q' => 'What is your favorite sport?', 'sec_a' => $secAnsHash],
@@ -151,7 +210,10 @@ try {
         ['username' => 'kaveesha_w',      'email' => 'kaveesha@uoc.ac.lk',     'phone' => '+94 77 889 9001', 'role' => 'Athlete', 'sec_q' => 'What is your primary sport?', 'sec_a' => $secAnsHash],
 
         // Faculty of Indigenous Medicine
-        ['username' => 'sanduni_j',       'email' => 'sanduni@uoc.ac.lk',      'phone' => '+94 76 998 8776', 'role' => 'Athlete', 'sec_q' => 'What is your primary sport?', 'sec_a' => $secAnsHash]
+        ['username' => 'sanduni_j',       'email' => 'sanduni@uoc.ac.lk',      'phone' => '+94 76 998 8776', 'role' => 'Athlete', 'sec_q' => 'What is your primary sport?', 'sec_a' => $secAnsHash],
+
+        // Recently Registered Athletes
+        ['username' => 'yumal_perera',    'email' => 'yumal@uoc.ac.lk',        'phone' => '+94 77 123 4567', 'role' => 'Athlete', 'sec_q' => 'What is your primary sport?', 'sec_a' => $secAnsHash]
     ];
 
     $stmtFindUser = $db->prepare("SELECT user_id FROM `user` WHERE `username` = :u OR `email` = :e LIMIT 1");
@@ -900,6 +962,126 @@ try {
         ]);
     }
     echo "Announcements and Notifications seeded.\n\n";
+
+    // 8. Training Sessions & Attendance Seeding
+    echo "Seeding Training Sessions & Attendance Records...\n";
+    $db->exec("DELETE FROM `training_attendance`");
+    $db->exec("DELETE FROM `training_sessions`");
+
+    $trainingSessionsToSeed = [
+        [
+            'id' => 1,
+            'sport' => 1, // Football
+            'facility' => 2, // Grounds
+            'date' => date('Y-m-d'), // Today
+            'time' => '16:30:00',
+            'duration' => '01:30:00',
+            'type' => 'Practice',
+            'focus' => 'High-Press & Set Pieces',
+            'notes' => 'Match simulation with referee rehearsal before SLUG qualifier.'
+        ],
+        [
+            'id' => 2,
+            'sport' => 1, // Football
+            'facility' => 1, // Gym
+            'date' => date('Y-m-d', strtotime('-1 day')),
+            'time' => '06:00:00',
+            'duration' => '01:30:00',
+            'type' => 'Conditioning',
+            'focus' => 'Plyometrics & Conditioning',
+            'notes' => 'Early morning core mobility, resistance band drills, and squad weigh-in.'
+        ],
+        [
+            'id' => 3,
+            'sport' => 2, // Basketball
+            'facility' => 1, // Gym
+            'date' => date('Y-m-d', strtotime('+1 day')),
+            'time' => '15:30:00',
+            'duration' => '02:00:00',
+            'type' => 'Tactical',
+            'focus' => 'Zone Defense & Fast Breaks',
+            'notes' => 'Full court press transition analysis and perimeter shooting drills.'
+        ],
+        [
+            'id' => 4,
+            'sport' => 3, // Cricket
+            'facility' => 2, // Grounds
+            'date' => date('Y-m-d', strtotime('-4 days')),
+            'time' => '16:00:00',
+            'duration' => '02:00:00',
+            'type' => 'Practice',
+            'focus' => 'Spin Bowling & Death Overs',
+            'notes' => 'Target yorker practice and middle-order acceleration under game scenarios.'
+        ],
+        [
+            'id' => 5,
+            'sport' => 1, // Football
+            'facility' => 2, // Grounds
+            'date' => date('Y-m-d', strtotime('-6 days')),
+            'time' => '17:00:00',
+            'duration' => '01:30:00',
+            'type' => 'Conditioning',
+            'focus' => 'Counter-Attack & Crossing',
+            'notes' => 'Wing play combinations and finishing from edge-of-the-box cutbacks.'
+        ]
+    ];
+
+    $stmtInsertSession = $db->prepare("
+        INSERT INTO `training_sessions` (`session_id`, `sport_id`, `facility_id`, `session_date`, `start_time`, `duration_minutes`, `session_type`, `focus_area`, `notes`)
+        VALUES (:id, :sport, :facility, :date, :time, :duration, :type, :focus, :notes)
+    ");
+    foreach ($trainingSessionsToSeed as $ts) {
+        $stmtInsertSession->execute([
+            ':id'       => $ts['id'],
+            ':sport'    => $ts['sport'],
+            ':facility' => $ts['facility'],
+            ':date'     => $ts['date'],
+            ':time'     => $ts['time'],
+            ':duration' => $ts['duration'],
+            ':type'     => $ts['type'],
+            ':focus'    => $ts['focus'],
+            ':notes'    => $ts['notes']
+        ]);
+    }
+
+    // Seed Attendance for these sessions
+    $allAthleteIds = $db->query("SELECT athlete_id FROM `Athletic` LIMIT 20")->fetchAll(PDO::FETCH_COLUMN);
+    $stmtInsertAttendance = $db->prepare("
+        INSERT INTO `training_attendance` (`session_id`, `athlete_id`, `status`)
+        VALUES (:sess, :ath, :status)
+    ");
+    $statuses = ['Present', 'Present', 'Present', 'Present', 'Excused', 'Absent'];
+    $attCount = 0;
+    foreach ($trainingSessionsToSeed as $ts) {
+        foreach ($allAthleteIds as $idx => $athId) {
+            $st = $statuses[($idx + $ts['id']) % count($statuses)];
+            $stmtInsertAttendance->execute([
+                ':sess'   => $ts['id'],
+                ':ath'    => $athId,
+                ':status' => $st
+            ]);
+            $attCount++;
+        }
+    }
+    echo "Training sessions seeded: " . count($trainingSessionsToSeed) . " | Attendance logs: " . $attCount . "\n\n";
+
+    // 9. Match Results Seeding
+    echo "Seeding Match Results...\n";
+    $db->exec("DELETE FROM `match_results`");
+    $completedFixture = $db->query("SELECT fixture_id FROM `fixtures` LIMIT 1")->fetchColumn();
+    if ($completedFixture) {
+        $stmtInsertResult = $db->prepare("
+            INSERT INTO `match_results` (`fixture_id`, `scores`, `scorers`, `match_report`)
+            VALUES (:fix, :scores, :scorers, :report)
+        ");
+        $stmtInsertResult->execute([
+            ':fix'     => $completedFixture,
+            ':scores'  => '2 - 1',
+            ':scorers' => 'Kavindu Perera (34\'), Sadeera Samarawickrama (78\')',
+            ':report'  => 'Dominant second-half performance with aggressive pressing secured victory in the Inter-Faculty quarter-final match.'
+        ]);
+        echo "Match results seeded successfully.\n\n";
+    }
 
     echo "=== ALL DATABASE UPDATES AND DEMO DATA SEEDED SUCCESSFULLY! ===\n";
 
