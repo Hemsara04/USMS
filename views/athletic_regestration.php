@@ -162,7 +162,7 @@ if (!empty($_SESSION['flash_error'])) {
                 <a href="#" class="nav-item <?= in_array($currentView, ['profile-view', 'edit-profile-view']) ? 'active' : '' ?>" data-target="profile-view" id="nav-profile"><i class="ph ph-user"></i> Profile</a>
             </nav>
             <div class="sidebar-footer">
-                <a href="#" class="nav-item"><i class="ph ph-sign-out"></i> Sign Out</a>
+                <a href="../controllers/AuthController.php?action=logout" class="nav-item"><i class="ph ph-sign-out"></i> Sign Out</a>
             </div>
         </aside>
 
@@ -180,6 +180,9 @@ if (!empty($_SESSION['flash_error'])) {
                         </div>
                         <img src="https://ui-avatars.com/api/?name=<?= urlencode($fullName) ?>&background=0D8ABC&color=fff&size=40" alt="User Avatar" class="avatar">
                     </div>
+                    <a href="../controllers/AuthController.php?action=logout" class="notification-btn" title="Sign Out" style="text-decoration:none; color:inherit; display:flex; align-items:center; justify-content:center;">
+                        <i class="ph ph-sign-out" style="font-size:18px;"></i>
+                    </a>
                 </div>
             </header>
 
