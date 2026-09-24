@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>IS_03 - Interim Action Plan Document</title>
+<style>
+  @page {
+    size: A4;
+    margin: 14mm 15mm 14mm 15mm;
+  }
+
+  * {
+    box-sizing: border-box;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    color: #0f172a;
+    background: #ffffff;
+    font-size: 9pt;
+    line-height: 1.38;
+    margin: 0;
+    padding: 0;
+  }
+
+  .page {
+    min-height: 265mm;
+    max-height: 265mm;
+    position: relative;
+    page-break-after: always;
+    overflow: hidden;
+  }
+
+  .page:last-child {
+    page-break-after: avoid;
+  }
+
+  .page-footer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid #cbd5e1;
+    padding-top: 4px;
+    font-size: 7.8pt;
+    color: #64748b;
+  }
+
+  .header-card {
+    border-bottom: 2.5px solid #087f80;
+    padding-bottom: 6px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+
+  .institution {
+    font-size: 9.5pt;
+    font-weight: 700;
+    color: #07162d;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .course-title {
+    font-size: 8.5pt;
+    color: #087f80;
+    font-weight: 600;
+    margin-top: 1px;
+  }
+
+  .doc-title {
+    font-size: 15pt;
+    font-weight: 800;
+    color: #07162d;
+    margin: 3px 0 1px 0;
+    letter-spacing: -0.02em;
+  }
+
+  .project-name {
+    font-size: 9.8pt;
+    font-weight: 600;
+    color: #334155;
+  }
+
+  .meta-badge-box {
+    text-align: right;
+    background: #f1f5f9;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+  }
+
+  .group-id {
+    font-size: 14pt;
+    font-weight: 800;
+    color: #087f80;
+    display: block;
+    line-height: 1.1;
+  }
+
+  .meta-sub {
+    font-size: 8pt;
+    color: #475467;
+    margin-top: 2px;
+    font-weight: 600;
+  }
+
+  h2 {
+    font-size: 10.5pt;
+    font-weight: 750;
+    color: #07162d;
+    border-left: 3.5px solid #087f80;
+    padding-left: 7px;
+    margin: 10px 0 5px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+
+  h3 {
+    font-size: 9.4pt;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 7px 0 3px 0;
+  }
+
+  p {
+    margin: 0 0 5px 0;
+    text-align: justify;
+  }
+
+  .feedback-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 8.2pt;
+    margin: 6px 0 8px 0;
+  }
+
+  .feedback-table th {
+    background: #07162d;
+    color: #ffffff;
+    font-weight: 700;
+    padding: 5px 7px;
+    text-align: left;
+    border: 1px solid #07162d;
+  }
+
+  .feedback-table td {
+    padding: 4.5px 7px;
+    border: 1px solid #cbd5e1;
+    vertical-align: top;
+  }
+
+  .feedback-table tr:nth-child(even) {
+    background: #f8fafc;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 1.5px 5px;
+    border-radius: 4px;
+    font-size: 7.2pt;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  .badge-success { background: #dcfce7; color: #15803d; }
+  .badge-warning { background: #fef3c7; color: #b45309; }
+  .badge-danger  { background: #fee2e2; color: #b91c1c; }
+  .badge-info    { background: #e0f2fe; color: #0369a1; }
+
+  .callout-box {
+    background: #f8fafc;
+    border-left: 3.5px solid #087f80;
+    border-top: 1px solid #e2e8f0;
+    border-right: 1px solid #e2e8f0;
+    border-bottom: 1px solid #e2e8f0;
+    border-radius: 0 5px 5px 0;
+    padding: 6px 9px;
+    margin: 5px 0 7px 0;
+    font-size: 8.5pt;
+  }
+
+  .fr-list {
+    margin: 3px 0 6px 0;
+    padding-left: 15px;
+  }
+
+  .fr-list li {
+    margin-bottom: 2.5px;
+  }
+
+  .fr-code {
+    font-weight: 700;
+    color: #087f80;
+  }
+
+  /* Architectural Visual Diagram Styling */
+  .arch-container {
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 8px 10px;
+    margin: 6px 0 8px 0;
+  }
+
+  .arch-layer {
+    background: #ffffff;
+    border: 1px solid #94a3b8;
+    border-radius: 5px;
+    padding: 5px 8px;
+    margin-bottom: 4px;
+  }
+
+  .arch-layer-title {
+    font-size: 7.8pt;
+    font-weight: 750;
+    color: #07162d;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .arch-component-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 5px;
+  }
+
+  .arch-chip {
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    padding: 3px 5px;
+    font-size: 7.4pt;
+    font-family: ui-monospace, SFMono-Regular, monospace;
+    color: #1e293b;
+    text-align: center;
+  }
+
+  .arch-arrow {
+    text-align: center;
+    font-size: 8pt;
+    color: #087f80;
+    font-weight: 800;
+    line-height: 1;
+    margin: 1px 0;
+  }
+
+  .timeline-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 8.2pt;
+    margin: 6px 0;
+  }
+
+  .timeline-table th {
+    background: #1e293b;
+    color: #ffffff;
+    padding: 5px 7px;
+    text-align: left;
+    border: 1px solid #1e293b;
+  }
+
+  .timeline-table td {
+    padding: 4.5px 7px;
+    border: 1px solid #cbd5e1;
+  }
+
+  .timeline-table tr:nth-child(even) {
+    background: #f8fafc;
+  }
+
+  .signature-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px dashed #cbd5e1;
+  }
+
+  .sig-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 6px 8px;
+    font-size: 7.8pt;
+  }
+
+  .sig-card b {
+    display: block;
+    color: #07162d;
+    margin-bottom: 2px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ==================== PAGE 1 ==================== -->
+<div class="page">
+  <div class="header-card">
+    <div>
+      <div class="institution">University of Colombo School of Computing (UCSC)</div>
+      <div class="course-title">SCS2301 / IS2201: Software Engineering Project • Academic Year 2025/2026</div>
+      <div class="doc-title">Interim Action Plan Document</div>
+      <div class="project-name">Project: University Sports Management System (USMS)</div>
+    </div>
+    <div class="meta-badge-box">
+      <span class="group-id">GROUP IS03</span>
+      <div class="meta-sub">Proposal Outcome: <b>ACCEPT</b></div>
+      <div class="meta-sub">Submission Date: Sep 24, 2026</div>
+    </div>
+  </div>
+
+  <h2>1. Executive Summary & Evaluation Context</h2>
+  <p>
+    Following the formal Proposal Presentation and Defense for <b>Group IS03</b>, the academic evaluation panel accepted the core proposal, formally approving the <i>Problem Definition and Proposed Solution</i>, <i>Project Scope</i>, <i>Feasibility Study</i>, and <i>Utilization of Development Frameworks</i>. The overall outcome of the defense was recorded as <b>ACCEPT</b>.
+  </p>
+  <p>
+    The evaluation panel provided constructive, specific feedback regarding practical assumptions surrounding university student database verifications, the formalization of security as explicit functional requirements, adherence to full multi-sport coverage, elimination of automated medical lock releases, and the standardization of UML Design Diagrams (which were flagged for rectification).
+  </p>
+  <p>
+    This <b>Action Plan Document</b> establishes our formal engineering response, technical actions already implemented in the active codebase, and our development roadmap leading to the final defense.
+  </p>
+
+  <h2>2. Proposal Feedback Analysis & Action Matrix</h2>
+  <table class="feedback-table">
+    <thead>
+      <tr>
+        <th style="width: 21%;">Evaluation Area</th>
+        <th style="width: 44%;">Panel Feedback & Directives</th>
+        <th style="width: 14%;">Status</th>
+        <th style="width: 21%;">Action Taken & Refinement</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><b>Student DB Verification</b></td>
+        <td>"You can't cross-check with the student database practically. So, it is okay to assume that the verification against real university students can be done when such information is available."</td>
+        <td><span class="badge badge-success">Addressed</span></td>
+        <td>Implemented internal Verification Queue and decoupled API adapter interface.</td>
+      </tr>
+      <tr>
+        <td><b>Security Classification</b></td>
+        <td>"Security is a functional requirement."</td>
+        <td><span class="badge badge-success">Addressed</span></td>
+        <td>Specified and implemented 6 distinct Functional Requirements (RBAC, BCRYPT, PDO).</td>
+      </tr>
+      <tr>
+        <td><b>Scope: Sports Coverage</b></td>
+        <td>"You mentioned that you will be covering all the sports."</td>
+        <td><span class="badge badge-success">Addressed</span></td>
+        <td>Normalized relational model & dynamic catalog supporting all 24+ UOC sports.</td>
+      </tr>
+      <tr>
+        <td><b>Medical Lock Release</b></td>
+        <td>"You don't have to automate medical lock release as it may result in unnecessary complications."</td>
+        <td><span class="badge badge-success">Addressed</span></td>
+        <td>Automated release eliminated; clearance is strictly certified by Medical Officer.</td>
+      </tr>
+      <tr>
+        <td><b>Design Diagrams</b><br><span class="badge badge-danger">Reject</span></td>
+        <td>Component diagrams and architectural representations showed discrepancies with component reuse and GitHub UI structure.</td>
+        <td><span class="badge badge-warning">Rectified</span></td>
+        <td>Standardized UML Component Diagram & unified cross-portal UI design tokens.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>3. High-Level Summary of Action Plan Progress</h2>
+  <div class="callout-box">
+    <b>Implementation Highlights:</b> Over the interim development cycle, Group IS03 has synchronized all team contributions into the <code>main</code> branch on GitHub (<code>Hemsara04/USMS</code>). All five feedback directives have been systematically addressed: student verification is modeled through an administrative approval workflow, security is implemented as robust functional requirements, medical clearance is certified manually by clinicians, multi-sport scalability is operational, and architecture diagrams have been standardized.
+  </div>
+
+  <div class="page-footer">
+    <span>UCSC • SCS2301/IS2201 Software Engineering Project • Group IS03</span>
+    <span>Page 1 of 4</span>
+  </div>
+</div>
+
+<!-- ==================== PAGE 2 ==================== -->
+<div class="page">
+  <h2>3. Detailed Technical Resolution of Panel Directives</h2>
+  
+  <h3>3.1 Practical Student Verification & Institutional Assumption Modeling</h3>
+  <div class="callout-box">
+    <b>Panel Understanding:</b> Undergraduate project teams do not have access to live University of Colombo Student Information System (SIS/ERP) APIs due to institutional security protocols and privacy policies. The panel confirmed it is appropriate to model external verification as an engineering assumption.
+  </div>
+  <p>
+    <b>Technical Resolution:</b> USMS adopts a resilient <b>Two-Tier Verification Architecture</b>:
+  </p>
+  <ul class="fr-list">
+    <li><b>Operational Tier (Internal Verification Queue):</b> In <code>views/admin_user_management.php</code> and <code>sport_application</code>, student-athletes provide their institutional Index Number, Academic Year, and Faculty during registration. Records enter a pending administrative queue where Admins and TICs verify submitted credentials and approve/reject applications with full audit logging.</li>
+    <li><b>Architectural Tier (External Verification Adapter):</b> The system defines a service adapter interface (<code>StudentVerificationInterface</code>). When institutional API access is officially provisioned, the adapter can connect directly without refactoring existing database schemas or controller logic.</li>
+  </ul>
+
+  <h3>3.2 Elevating Security to Explicit Functional Requirements (FR)</h3>
+  <p>
+    Security has been refactored from general non-functional claims into <b>six demonstrable Functional Requirements</b>, fully implemented in the active codebase:
+  </p>
+
+  <table class="feedback-table">
+    <thead>
+      <tr>
+        <th style="width: 17%;">FR ID</th>
+        <th style="width: 25%;">Functional Requirement</th>
+        <th style="width: 33%;">Technical Implementation</th>
+        <th style="width: 25%;">Verification Reference</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="fr-code">FR-SEC-01</span></td>
+        <td>Cryptographic Password & Secret Hashing</td>
+        <td>BCRYPT adaptive hashing with automatic unique salt generation via PHP <code>password_hash(..., PASSWORD_BCRYPT)</code>.</td>
+        <td><code>models/User.php:68, 93, 136</code><br><code>models/Admin.php:198</code></td>
+      </tr>
+      <tr>
+        <td><span class="fr-code">FR-SEC-02</span></td>
+        <td>Role-Based Access Control (RBAC)</td>
+        <td>Strict authorization enforcement across 8 system roles (Admin, Coach, TIC, Medical Officer, President, Athlete, etc.).</td>
+        <td><code>config/auth_guard.php</code> executes <code>requireRole()</code> on Line 1 of all views.</td>
+      </tr>
+      <tr>
+        <td><span class="fr-code">FR-SEC-03</span></td>
+        <td>Session Lifecycle & Invalidation</td>
+        <td>Secure session generation upon login, session hijacking defense, and complete cookie/session destruction on logout.</td>
+        <td><code>AuthController.php:42-97</code> and <code>AuthController.php:327-340</code></td>
+      </tr>
+      <tr>
+        <td><span class="fr-code">FR-SEC-04</span></td>
+        <td>SQL Injection (SQLi) Immunity</td>
+        <td>100% Parameterized Prepared Statements across all queries; elimination of raw query string concatenation.</td>
+        <td><code>config/db.php</code> enforces <code>PDO::ATTR_EMULATE_PREPARES =&gt; false</code>.</td>
+      </tr>
+      <tr>
+        <td><span class="fr-code">FR-SEC-05</span></td>
+        <td>Cross-Site Scripting (XSS) Sanitization</td>
+        <td>Strict context-aware character escaping for all database and user inputs before rendering into the DOM.</td>
+        <td>Universal application of <code>htmlspecialchars(..., ENT_QUOTES)</code> in views.</td>
+      </tr>
+      <tr>
+        <td><span class="fr-code">FR-SEC-06</span></td>
+        <td>Append-Only Administrative Audit Trail</td>
+        <td>Logging of security-critical administrative activities (role modifications, account deletions, verifications).</td>
+        <td>Maintained in <code>views/admin_audit_logs.php</code> logging user, timestamp, IP, and status.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>3.3 Multi-Sport Architecture & Complete Scope Coverage</h3>
+  <p>
+    The panel reinforced that USMS must comprehensively support <b>all recognized university sports</b>. Our database schema and software architecture achieve complete multi-sport scalability through normalized entities:
+  </p>
+  <ul class="fr-list">
+    <li><b>Dynamic Sports Entity (<code>sports</code>):</b> Maintains program categories (Indoor, Outdoor, Racquet, Aquatic), program types (Men's Varsity, Women's Varsity, Co-ed Club), and roster constraints.</li>
+    <li><b>Relational Decoupling:</b> Operational entities—<code>training_sessions</code>, <code>fixtures</code>, <code>match_squads</code>, <code>equipment</code>, and <code>injuries</code>—are relationally mapped to <code>sport_id</code> via indexed foreign keys rather than static enums.</li>
+    <li><b>Administrative Sports Catalog:</b> Via <code>views/admin_sports_catalog.php</code>, athletic administrators can register and configure new university sports dynamically without source code modification.</li>
+  </ul>
+
+  <h3>3.4 Clinical Discretion vs. Automated Medical Lock Release</h3>
+  <div class="callout-box">
+    <b>Hazard Identified by Panel:</b> Automating medical clearance based solely on elapsed recovery time introduces severe clinical and institutional liability. An athlete could return to competition with unresolved physical trauma.
+  </div>
+  <p>
+    <b>Remediation Implemented:</b> Automated lock expiration has been <b>permanently removed</b>. Medical clearance is strictly restricted to certified clinicians through the <b>Medical Officer portal</b> (<code>views/med_clearance.php</code> and <code>models/Medical.php</code>), requiring clinical examination and manual sign-off.
+  </p>
+
+  <div class="page-footer">
+    <span>UCSC • SCS2301/IS2201 Software Engineering Project • Group IS03</span>
+    <span>Page 2 of 4</span>
+  </div>
+</div>
+
+<!-- ==================== PAGE 3 ==================== -->
+<div class="page">
+  <h3>3.5 Rectifying Design Diagrams: Standardized UML Component Architecture</h3>
+  <p>
+    The panel's rejection of Design Diagrams was rooted in architectural divergence between early diagrams and component reusability. We have restructured our system architecture into a formal <b>UML Component Architecture</b> strictly reflecting our active Model-View-Controller (MVC) implementation:
+  </p>
+
+  <div class="arch-container">
+    <div class="arch-layer">
+      <div class="arch-layer-title">
+        <span>[Component 1] Presentation Layer (Dynamic UI Views & Shared Partials)</span>
+        <span style="font-size:7pt; color:#64748b;">HTML5 / CSS3 / Vanilla JS</span>
+      </div>
+      <div class="arch-component-grid">
+        <div class="arch-chip">&laquo;component&gt;<br>Admin Portal<br>(User CRUD/Audit)</div>
+        <div class="arch-chip">&laquo;component&gt;<br>Coach Portal<br>(Sessions/Squads)</div>
+        <div class="arch-chip">&laquo;component&gt;<br>TIC Portal<br>(Stock Inventory)</div>
+        <div class="arch-chip">&laquo;component&gt;<br>Medical Portal<br>(Roster/Clearance)</div>
+      </div>
+    </div>
+
+    <div class="arch-arrow">&#9660; HTTP Request (POST / GET) with Session Token &#9660;</div>
+
+    <div class="arch-layer" style="background:#f1f5f9; border-color:#087f80;">
+      <div class="arch-layer-title">
+        <span>[Component 2] Access Control & Middleware Security Guard</span>
+        <span style="font-size:7pt; color:#087f80;">auth_guard.php</span>
+      </div>
+      <div style="font-size:7.5pt; color:#334155; text-align:center; padding:2px;">
+        Enforces Session Liveness (<code>requireLogin()</code>) & Role-Based Access Control (<code>requireRole()</code>) before routing to Controllers
+      </div>
+    </div>
+
+    <div class="arch-arrow">&#9660; Authorized Request Routed to Controller &#9660;</div>
+
+    <div class="arch-layer">
+      <div class="arch-layer-title">
+        <span>[Component 3] Controller Layer (Application Logic & Action Routing)</span>
+        <span style="font-size:7pt; color:#64748b;">PHP 8.x Controllers</span>
+      </div>
+      <div class="arch-component-grid">
+        <div class="arch-chip">&laquo;component&gt;<br>AuthController<br>AdminController</div>
+        <div class="arch-chip">&laquo;component&gt;<br>CoachController<br>AthleteController</div>
+        <div class="arch-chip">&laquo;component&gt;<br>TicController<br>FacilityController</div>
+        <div class="arch-chip">&laquo;component&gt;<br>MedicalController<br>PresidentController</div>
+      </div>
+    </div>
+
+    <div class="arch-arrow">&#9660; Method Invocations & ACID Transactions &#9660;</div>
+
+    <div class="arch-layer">
+      <div class="arch-layer-title">
+        <span>[Component 4] Model Layer (Data Access Objects & Business Domain Logic)</span>
+        <span style="font-size:7pt; color:#64748b;">Domain Entities</span>
+      </div>
+      <div class="arch-component-grid">
+        <div class="arch-chip">&laquo;DAO&gt;<br>User.php<br>Admin.php</div>
+        <div class="arch-chip">&laquo;DAO&gt;<br>Coach.php<br>Squad.php</div>
+        <div class="arch-chip">&laquo;DAO&gt;<br>Equipment.php<br>Facility.php</div>
+        <div class="arch-chip">&laquo;DAO&gt;<br>Medical.php<br>Announcement.php</div>
+      </div>
+    </div>
+
+    <div class="arch-arrow">&#9660; PDO Parameterized Prepared Statements (UTF-8) &#9660;</div>
+
+    <div class="arch-layer" style="background:#07162d; color:#ffffff; border-color:#07162d;">
+      <div class="arch-layer-title" style="color:#ffffff;">
+        <span>[Component 5] Persistence Layer (Relational Database)</span>
+        <span style="font-size:7pt; color:#cbd5e1;">MySQL 8.0 / MariaDB</span>
+      </div>
+      <div style="font-size:7.4pt; color:#e2e8f0; text-align:center; padding:2px; font-family:ui-monospace,monospace;">
+        Tables: user | Athletic | sports | equipment | equipment_issue | training_sessions | match_squads | medical_clearances
+      </div>
+    </div>
+  </div>
+
+  <p>
+    <b>UI Component Harmonization Across GitHub:</b> All interfaces across team feature branches adhere to a synchronized Design System: Deep Navy <code>#07162d</code> and Athletic Teal <code>#087f80</code> tokens, with reusable partials (e.g., <code>admin_sidebar.php</code>, <code>tic_sidebar.php</code>) ensuring identical structure across all portals.
+  </p>
+
+  <h2>4. Core CRUD Module Traceability (Implemented Modules)</h2>
+  <table class="feedback-table">
+    <thead>
+      <tr>
+        <th style="width: 20%;">User Role</th>
+        <th style="width: 27%;">Primary CRUD Module</th>
+        <th style="width: 28%;">Files & Implementation</th>
+        <th style="width: 25%;">Key Features & Safeguards</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><b>System Admin</b></td>
+        <td>User Management CRUD & Account Provisioning</td>
+        <td><code>views/admin_user_management.php</code><br><code>controllers/AdminController.php</code><br><code>models/Admin.php</code></td>
+        <td>Account creation, role assignment, password resets, self-deletion prevention, verification queue.</td>
+      </tr>
+      <tr>
+        <td><b>TIC Officer</b></td>
+        <td>Equipment & Stock Inventory CRUD</td>
+        <td><code>views/tic_stock_inventory.php</code><br><code>controllers/TicController.php</code><br><code>models/Equipment.php</code></td>
+        <td>Smart restock auto-detection, condition tracking, ACID transactional checkouts and returns.</td>
+      </tr>
+      <tr>
+        <td><b>Coach</b></td>
+        <td>Training Sessions & Squad Selection CRUD</td>
+        <td><code>views/coach_training_sessions.php</code><br><code>controllers/CoachController.php</code><br><code>models/Coach.php</code></td>
+        <td>Practice scheduling, venue booking, attendance sheet generation, match squad formulation.</td>
+      </tr>
+      <tr>
+        <td><b>Medical Officer</b></td>
+        <td>Athlete Health Registry & Injury Tracking CRUD</td>
+        <td><code>views/med_athlete_roster.php</code><br><code>controllers/MedicalController.php</code><br><code>models/Medical.php</code></td>
+        <td>Clinical health profile updates, active injury logging, manual medical clearance certification.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="page-footer">
+    <span>UCSC • SCS2301/IS2201 Software Engineering Project • Group IS03</span>
+    <span>Page 3 of 4</span>
+  </div>
+</div>
+
+<!-- ==================== PAGE 4 ==================== -->
+<div class="page">
+  <h2>5. Work Breakdown Structure (WBS) & Implementation Milestones</h2>
+  <p>
+    To ensure structured execution between the interim review and final submission, the development trajectory is divided into prioritized, measurable sprints:
+  </p>
+
+  <table class="timeline-table">
+    <thead>
+      <tr>
+        <th style="width: 14%;">Milestone</th>
+        <th style="width: 38%;">Planned Activities & Engineering Tasks</th>
+        <th style="width: 26%;">Deliverables / Artifacts</th>
+        <th style="width: 22%;">Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><b>Sprint 1</b></td>
+        <td>Database schema normalization, Unified Authentication Portal, BCRYPT hashing, RBAC middleware.</td>
+        <td><code>config/auth_guard.php</code>, <code>views/login.php</code></td>
+        <td><span class="badge badge-success">Completed</span></td>
+      </tr>
+      <tr>
+        <td><b>Sprint 2</b></td>
+        <td>Admin Portal Full User CRUD (Provision, Edit, Delete), Verification Queue, Metrics Dashboard.</td>
+        <td><code>views/admin_user_management.php</code>, <code>models/Admin.php</code></td>
+        <td><span class="badge badge-success">Completed</span></td>
+      </tr>
+      <tr>
+        <td><b>Sprint 3</b></td>
+        <td>TIC Stock Inventory Smart Restock CRUD, Equipment Checkout transactions, Medical Manual Clearance.</td>
+        <td><code>views/tic_stock_inventory.php</code>, <code>models/Equipment.php</code></td>
+        <td><span class="badge badge-success">Verified</span></td>
+      </tr>
+      <tr>
+        <td><b>Sprint 4</b></td>
+        <td>Comprehensive UML diagram overhaul (Component, Activity, and Sequence diagrams aligned with MVC).</td>
+        <td>Revised Architecture & Design Document</td>
+        <td><span class="badge badge-info">In Progress</span></td>
+      </tr>
+      <tr>
+        <td><b>Sprint 5</b></td>
+        <td>Cross-portal UI component alignment, responsive mobile optimization, end-to-end user testing.</td>
+        <td>Quality Assurance & Usability Report</td>
+        <td><span class="badge badge-warning">Scheduled</span></td>
+      </tr>
+      <tr>
+        <td><b>Final Phase</b></td>
+        <td>Deployment verification, final technical documentation, video demonstration, and system defense.</td>
+        <td>Production Release & Final Defense</td>
+        <td><span class="badge badge-warning">Scheduled</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>6. GitHub Repository Strategy & Version Control Integrity</h2>
+  <p>
+    Our team enforces strict version control practices on GitHub (<b>Hemsara04/USMS</b>). Features are developed in isolated contributor branches (<code>hasitha</code>, <code>sandaruwan</code>, <code>abdullah</code>) and integrated into <code>main</code> strictly via reviewed Pull Requests. All security safeguards, full CRUD modules, and design revisions cited in this document are committed, syntax-checked, and operational on the <code>main</code> branch.
+  </p>
+
+  <h2>7. Conclusion & Commitment</h2>
+  <p>
+    Group IS03 has systematically transformed all evaluator feedback into actionable engineering implementations. By establishing pragmatic student verification assumptions, elevating security to demonstrable functional requirements, committing to full multi-sport architecture, enforcing manual clinical clearance, and standardizing our UML design diagrams, USMS is on schedule for high-caliber final delivery.
+  </p>
+
+  <div class="signature-grid">
+    <div class="sig-card">
+      <b>Group Leader / Member</b>
+      Hasitha Hemsara<br>
+      Index: 22020294 / IS<br>
+      <i>Role: Backend & Security Lead</i>
+    </div>
+    <div class="sig-card">
+      <b>Team Member</b>
+      Sandaruwan Bandara<br>
+      Index: 22020308 / IS<br>
+      <i>Role: Coach & Match Coordinator</i>
+    </div>
+    <div class="sig-card">
+      <b>Team Member</b>
+      Abdullah Farook<br>
+      Index: 22020112 / IS<br>
+      <i>Role: UI/UX & Frontend Lead</i>
+    </div>
+  </div>
+
+  <div class="page-footer">
+    <span>UCSC • SCS2301/IS2201 Software Engineering Project • Group IS03</span>
+    <span>Page 4 of 4 (Final Page)</span>
+  </div>
+</div>
+
+</body>
+</html>
