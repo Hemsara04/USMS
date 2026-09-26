@@ -1644,3 +1644,24 @@ body {
     font-size: 13px;
     font-weight: 500;
 }
+
+/* Athlete profile and personal schedule */
+.profile-notice, .profile-error { padding: 14px 18px; margin-bottom: 20px; border-radius: 8px; }
+.profile-notice { background: #e8f6f3; color: #155e51; }
+.profile-error { background: #fff1f2; color: #9f1239; }
+.profile-error[hidden] { display: none; }
+.schedule-note { margin: 0 0 20px; }
+.cal-nav a { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+.personal-details-card .detail-row strong { overflow-wrap: anywhere; text-align: right; }
+.event-card { overflow-wrap: anywhere; }
+button:disabled { opacity: .6; cursor: wait; }
+@media print {
+    .sidebar, .top-header, .header-action-buttons, .profile-notice { display: none !important; }
+    .view-section { display: none !important; }
+    #profile-view { display: block !important; }
+    .main-content { margin: 0 !important; width: 100% !important; }
+    .views-container { padding: 0 !important; }
+    .profile-grid { display: block; }
+    .card { break-inside: avoid; box-shadow: none; }
+    body, .app-container { height: auto; overflow: visible; background: white; }
+}

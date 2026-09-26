@@ -82,17 +82,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Profile Flow
     if (editProfileBtn) editProfileBtn.addEventListener('click', () => switchView('edit-profile-view'));
-    if (cancelEditBtn) cancelEditBtn.addEventListener('click', () => switchView('profile-view'));
-    if (saveProfileBtn) {
-        saveProfileBtn.addEventListener('click', () => {
-            const originalText = saveProfileBtn.innerHTML;
-            saveProfileBtn.innerHTML = '<i class="ph ph-spinner ph-spin"></i> Saving...';
-            setTimeout(() => {
-                saveProfileBtn.innerHTML = originalText;
-                switchView('profile-view');
-            }, 800);
-        });
-    }
+    const profileForm = document.getElementById('athlete-profile-form');
+    const profileError = document.getElementById('profile-error');
+    if (cancelEditBtn) cancelEditBtn.addEventListener('click', () => {
+        profileForm.reset();
+        profileError.hidden = true;
+        switchView('profile-view');
+    });
+    document.getElementById('export-profile-btn')?.addEventListener('click', () => window.print());
+    if (profileForm) profileForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        if (!profileForm.reportValidity() || saveProfileBtn.disabled) return;
+        const data = new FormData(profileForm);
+        saveProfileBtn.disabled = true;
+        cancelEditBtn.disabled = true;
+        saveProfileBtn.textContent = 'Saving…';
+        profileError.hidden = true;
+        try {
+            const response = await fetch(profileForm.action, {
+                method: 'POST', body: data, headers: { 'Accept': 'application/json' }
+            });
+            const result = await response.json();
+            if (!response.ok || result.status !== 'success') throw new Error(result.message || 'Unable to save profile.');
+            window.location.assign('?view=profile-view');
+        } catch (error) {
+            profileError.textContent = error.message || 'Unable to save profile. Please try again.';
+            profileError.hidden = false;
+            profileError.scrollIntoView({ block: 'center' });
+            saveProfileBtn.disabled = false;
+            cancelEditBtn.disabled = false;
+            saveProfileBtn.textContent = 'Save Changes';
+        }
+    });
 
     // New Application Button
     if (newAppBtn) {

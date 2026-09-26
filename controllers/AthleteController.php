@@ -26,6 +26,10 @@ class AthleteController {
         $action = $_GET['action'] ?? $_POST['action'] ?? '';
 
         switch ($action) {
+            case 'update_profile':
+                $this->updateProfile();
+                break;
+
             case 'submit_application':
                 $this->submitApplication();
                 break;
@@ -37,6 +41,42 @@ class AthleteController {
             default:
                 $this->sendResponse('error', 'Invalid action');
                 break;
+        }
+    }
+
+    private function updateProfile() {
+        if (!$this->userId || ($_SESSION['role'] ?? '') !== 'Athlete') {
+            http_response_code(403);
+            $this->sendResponse('error', 'Unauthorized');
+        }
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            header('Allow: POST');
+            $this->sendResponse('error', 'Use POST to save a profile.');
+        }
+        if (!is_string($_POST['csrf_token'] ?? null) || empty($_SESSION['athlete_csrf'])
+            || !hash_equals($_SESSION['athlete_csrf'], $_POST['csrf_token'])) {
+            http_response_code(403);
+            $this->sendResponse('error', 'Your session expired. Reload the page and try again.');
+        }
+        $stmt = $this->db->prepare('SELECT athlete_id FROM Athletic WHERE user_id = ?');
+        $stmt->execute([$this->userId]);
+        if (!$stmt->fetchColumn()) {
+            http_response_code(404);
+            $this->sendResponse('error', 'Athlete profile not found.');
+        }
+        require_once __DIR__ . '/../models/AthletePortal.php';
+        try {
+            (new AthletePortal($this->db))->updateProfile($this->userId, $_POST);
+            $_SESSION['athlete_profile_success'] = 'Profile updated successfully.';
+            $this->sendResponse('success', 'Profile updated successfully.');
+        } catch (InvalidArgumentException $e) {
+            http_response_code(422);
+            $this->sendResponse('error', $e->getMessage());
+        } catch (PDOException $e) {
+            error_log('Athlete profile save: ' . $e->getMessage());
+            http_response_code(500);
+            $this->sendResponse('error', 'Unable to save your profile. Please try again.');
         }
     }
 

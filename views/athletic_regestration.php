@@ -4,12 +4,17 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 require_once __DIR__ . '/../config/db.php';
 
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'Athlete') {
+if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'Athlete') {
     header('Location: login.php');
     exit;
 }
 
+date_default_timezone_set('Asia/Colombo');
 $db = Database::connect();
+require_once __DIR__ . '/../models/AthletePortal.php';
+$portal = new AthletePortal($db);
+$_SESSION['athlete_csrf'] = $_SESSION['athlete_csrf'] ?? bin2hex(random_bytes(32));
+function athleteEscape($value) { return htmlspecialchars((string)($value ?? ''), ENT_QUOTES, 'UTF-8'); }
 $stmt = $db->prepare("SELECT a.*, u.email FROM Athletic a JOIN user u ON a.user_id = u.user_id WHERE a.user_id = ?");
 $stmt->execute([$_SESSION['user_id']]);
 $athlete = $stmt->fetch();
@@ -25,8 +30,8 @@ $lastName = htmlspecialchars(isset($nameParts[1]) ? implode(' ', array_slice($na
 
 $indexNumber = htmlspecialchars($athlete['index_number']);
 $faculty = htmlspecialchars($athlete['faculty']);
-$height = htmlspecialchars($athlete['height']);
-$weight = htmlspecialchars($athlete['weight']);
+$height = athleteEscape($athlete['height'] ?: 'Not provided');
+$weight = athleteEscape($athlete['weight'] ?: 'Not provided');
 $academicYear = htmlspecialchars($athlete['academic_year']);
 $emergencyContact = htmlspecialchars($athlete['emergency_Contact']);
 $email = htmlspecialchars($athlete['email'] ?? '');
@@ -39,6 +44,8 @@ $stmtHours = $db->prepare("
     FROM training_attendance ta 
     JOIN training_sessions ts ON ta.session_id = ts.session_id 
     WHERE ta.athlete_id = ? AND ta.status = 'Present'
+      AND ts.session_date >= DATE_FORMAT(CURDATE(), '%Y-%m-01')
+      AND TIMESTAMP(ts.session_date, ts.start_time) <= NOW()
 ");
 $stmtHours->execute([$athleteId]);
 $trainingHours = round($stmtHours->fetchColumn() ?: 0, 1);
@@ -51,31 +58,37 @@ $stmtApps = $db->prepare("
 $stmtApps->execute([$athleteId]);
 $activeApps = $stmtApps->fetchColumn();
 
-// 3. Upcoming events
-// Count fixtures happening in the next 7 days
-$stmtEvents = $db->prepare("
-    SELECT COUNT(*) FROM fixtures 
-    WHERE fixture_date >= CURDATE() 
-    AND fixture_date <= DATE_ADD(CURDATE(), INTERVAL 7 DAY)
-");
-$stmtEvents->execute();
-$upcomingEvents = $stmtEvents->fetchColumn();
-
-// 4. Next Fixture
-$stmtNextFixture = $db->prepare("
-    SELECT f.fixture_date, f.fixture_time, f.opponent, f.home_team, s.sport_name, fac.facility_name
-    FROM fixtures f
-    JOIN sport_application sa ON f.sport_id = sa.sport_id
-    JOIN sports s ON f.sport_id = s.sport_id
-    LEFT JOIN facilities fac ON f.facility_id = fac.facility_id
-    WHERE sa.athletic_id = ? 
-      AND sa.status = 'Approved' 
-      AND (f.fixture_date > CURDATE() OR (f.fixture_date = CURDATE() AND f.fixture_time >= CURTIME()))
-    ORDER BY f.fixture_date ASC, f.fixture_time ASC
-    LIMIT 1
-");
-$stmtNextFixture->execute([$athleteId]);
-$nextFixture = $stmtNextFixture->fetch();
+// All dashboard and calendar events use the same athlete-scoped queries.
+$now = new DateTimeImmutable();
+$upcoming = $portal->schedule($athleteId, $now->format('Y-m-d H:i:s'));
+$nextFixture = $upcoming['matches'][0] ?? null;
+$upcomingTrainings = array_slice($upcoming['training'], 0, 5);
+$weekAhead = $now->modify('+7 days')->format('Y-m-d H:i:s');
+$upcomingEvents = count(array_filter(array_merge($upcoming['training'], $upcoming['matches']), function ($event) use ($weekAhead) {
+    return $event['event_date'] . ' ' . $event['event_time'] < $weekAhead;
+}));
+$requestedWeek = $_GET['week'] ?? '';
+$weekDate = is_string($requestedWeek) ? DateTimeImmutable::createFromFormat('!Y-m-d', $requestedWeek) : false;
+if (!$weekDate || $weekDate->format('Y-m-d') !== $requestedWeek || $weekDate->format('Y') < 1900 || $weekDate->format('Y') > 2100) {
+    $weekDate = $now->setTime(0, 0);
+}
+$weekStart = $weekDate->modify('-' . ((int)$weekDate->format('N') - 1) . ' days');
+$weekEnd = $weekStart->modify('+7 days');
+$calendar = $portal->schedule($athleteId, $weekStart->format('Y-m-d'), $weekEnd->format('Y-m-d'));
+$calendarDays = [];
+foreach ($calendar as $type => $events) {
+    foreach ($events as $event) {
+        $event['kind'] = $type === 'training' ? 'training' : 'match';
+        $calendarDays[$event['event_date']][] = $event;
+    }
+}
+foreach ($calendarDays as &$events) {
+    usort($events, function ($a, $b) { return strcmp($a['event_time'], $b['event_time']); });
+}
+unset($events);
+$stmtAwards = $db->prepare('SELECT uc.*, s.sport_name, se.season_year FROM university_colors uc JOIN sports s ON s.sport_id = uc.sport_id JOIN seasons se ON se.season_id = uc.season_id WHERE uc.athelet_id = ? ORDER BY se.season_year DESC, uc.award_id DESC');
+$stmtAwards->execute([$athleteId]);
+$athleteAwards = $stmtAwards->fetchAll();
 
 // 5. Medical Clearance
 $stmtMedical = $db->prepare("
@@ -89,35 +102,6 @@ $stmtMedical = $db->prepare("
 $stmtMedical->execute([$athleteId]);
 $medicalClearance = $stmtMedical->fetch();
 
-// 6. Upcoming Training
-$stmtUpcomingTraining = $db->prepare("
-    SELECT ts.*, s.sport_name, fac.facility_name
-    FROM training_sessions ts
-    JOIN sports s ON ts.sport_id = s.sport_id
-    LEFT JOIN facilities fac ON ts.facility_id = fac.facility_id
-    JOIN sport_application sa ON ts.sport_id = sa.sport_id
-    WHERE sa.athletic_id = ? AND sa.status = 'Approved'
-      AND (ts.session_date > CURDATE() OR (ts.session_date = CURDATE() AND ts.start_time >= CURTIME()))
-    ORDER BY ts.session_date ASC, ts.start_time ASC
-    LIMIT 5
-");
-$stmtUpcomingTraining->execute([$athleteId]);
-$upcomingTrainings = $stmtUpcomingTraining->fetchAll();
-
-if (empty($upcomingTrainings)) {
-    $stmtGeneralTraining = $db->prepare("
-        SELECT ts.*, s.sport_name, fac.facility_name
-        FROM training_sessions ts
-        JOIN sports s ON ts.sport_id = s.sport_id
-        LEFT JOIN facilities fac ON ts.facility_id = fac.facility_id
-        WHERE (ts.session_date > CURDATE() OR (ts.session_date = CURDATE() AND ts.start_time >= CURTIME()))
-        ORDER BY ts.session_date ASC, ts.start_time ASC
-        LIMIT 5
-    ");
-    $stmtGeneralTraining->execute();
-    $upcomingTrainings = $stmtGeneralTraining->fetchAll();
-}
-
 // 7. Sport Application data
 require_once __DIR__ . '/../models/SportApplication.php';
 $sportAppModel = new SportApplication($db);
@@ -127,6 +111,7 @@ $myApplications = $sportAppModel->getAthleteApplications($athleteId);
 $appStats = $sportAppModel->getApplicationStats($athleteId);
 
 $currentView = $_GET['view'] ?? 'dashboard-view';
+if (!in_array($currentView, ['dashboard-view', 'apply-view', 'applications-view', 'submission-view', 'application-details-view', 'calendar-view', 'profile-view', 'edit-profile-view'], true)) $currentView = 'dashboard-view';
 if (!empty($_SESSION['flash_error'])) {
     $currentView = 'apply-view';
 }
@@ -137,11 +122,11 @@ if (!empty($_SESSION['flash_error'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>University Sports Management Dashboard</title>
-    <link rel="stylesheet" href="../assets/css/athletic_regestration.css">
+    <link rel="stylesheet" href="../assets/css/athletic_regestration.css?v=<?= filemtime(__DIR__ . '/../assets/css/athletic_regestration.css') ?>">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Phosphor Icons -->
-    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web" async></script>
 </head>
 <body>
     <div class="app-container">
@@ -176,7 +161,7 @@ if (!empty($_SESSION['flash_error'])) {
                     <div class="user-profile">
                         <div class="user-info">
                             <span class="user-name"><?= $fullName ?></span>
-                            <span class="user-role">Varsity Track</span>
+                            <span class="user-role">Athlete</span>
                         </div>
                         <img src="https://ui-avatars.com/api/?name=<?= urlencode($fullName) ?>&background=0D8ABC&color=fff&size=40" alt="User Avatar" class="avatar">
                     </div>
@@ -215,7 +200,7 @@ if (!empty($_SESSION['flash_error'])) {
                             <div class="stat-icon bg-purple-light text-purple"><i class="ph ph-calendar-blank"></i></div>
                             <div class="stat-content">
                                 <h3><?= $upcomingEvents ?></h3>
-                                <p>Upcoming events this week</p>
+                                <p>Events in the next 7 days</p>
                             </div>
                         </div>
                     </div>
@@ -244,8 +229,8 @@ if (!empty($_SESSION['flash_error'])) {
                                     </div>
                                 </div>
                                 <div class="match-footer">
-                                    <p><i class="ph ph-map-pin"></i> <?= htmlspecialchars($nextFixture['facility_name']) ?> (<?= htmlspecialchars($nextFixture['sport_name']) ?>)</p>
-                                    <button class="btn btn-primary btn-sm">View Details</button>
+                                    <p><i class="ph ph-map-pin"></i> <?= athleteEscape($nextFixture['facility_name'] ?: 'Venue to be confirmed') ?> (<?= htmlspecialchars($nextFixture['sport_name']) ?>)</p>
+                                    <a class="btn btn-primary btn-sm" href="?view=calendar-view&amp;week=<?= athleteEscape($nextFixture['fixture_date']) ?>">View Details</a>
                                 </div>
                                 <?php else: ?>
                                 <div class="match-teams" style="justify-content: center; padding: 2rem;">
@@ -325,7 +310,7 @@ if (!empty($_SESSION['flash_error'])) {
                                                 $isToday = (date('Y-m-d', $sessionDate) === date('Y-m-d'));
                                                 
                                                 $title = htmlspecialchars($tSession['session_type'] . ' - ' . $tSession['sport_name']);
-                                                $location = htmlspecialchars($tSession['facility_name'] ?? 'Main Field');
+                                                $location = htmlspecialchars($tSession['facility_name'] ?: 'Venue to be confirmed');
                                             ?>
                                             <div class="training-item">
                                                 <div class="training-date">
@@ -347,7 +332,7 @@ if (!empty($_SESSION['flash_error'])) {
                                         </div>
                                     <?php endif; ?>
                                 </div>
-                                <button class="btn-text full-width" style="margin-top: 16px; justify-content: center;">View Full Schedule</button>
+                                <a class="btn-text full-width" href="?view=calendar-view" style="margin-top: 16px; justify-content: center;">View Full Schedule</a>
                             </div>
                         </div>
                     </div>
@@ -651,298 +636,8 @@ if (!empty($_SESSION['flash_error'])) {
                     </div>
                 </section>
                 
-                <!-- Profile View -->
-                <section id="profile-view" class="view-section">
-                    <div class="page-header-card profile-mode">
-                        <div class="profile-summary">
-                            <img src="https://ui-avatars.com/api/?name=<?= urlencode($fullName) ?>&background=0D8ABC&color=fff&size=80" alt="Avatar" class="large-avatar">
-                            <div class="profile-info">
-                                <span class="badge">VARSITY ATHLETE</span>
-                                <h2><?= $fullName ?></h2>
-                                <span class="id-tag"><i class="ph ph-identification-card"></i> <?= $indexNumber ?></span>
-                            </div>
-                        </div>
-                        <div class="header-action-buttons">
-                            <button class="btn btn-secondary"><i class="ph ph-download-simple"></i> Export Record</button>
-                            <button class="btn btn-primary" id="edit-profile-btn"><i class="ph ph-pencil-simple"></i> Edit Profile</button>
-                        </div>
-                    </div>
-                    <div class="profile-grid">
-                        <div class="grid-col-left">
-                            <div class="card personal-details-card">
-                                <h3><i class="ph ph-user"></i> Personal Details</h3>
-                                <div class="detail-group">
-                                    <p class="detail-label">ACADEMIC INFO</p>
-                                    <div class="detail-row"><span>Year</span><strong>Year <?= $academicYear ?></strong></div>
-                                    <div class="detail-row"><span>Faculty</span><strong><?= $faculty ?></strong></div>
-                                </div>
-                                <div class="divider"></div>
-                                <div class="detail-group">
-                                    <p class="detail-label">PHYSICAL PROFILE</p>
-                                    <div class="physical-stats">
-                                        <div class="stat"><i class="ph ph-ruler"></i><div class="stat-val"><?= $height ?><small>cm</small></div></div>
-                                        <div class="stat"><i class="ph ph-scales"></i><div class="stat-val"><?= $weight ?><small>kg</small></div></div>
-                                    </div>
-                                </div>
-                                <div class="divider"></div>
-                                <div class="detail-group emergency">
-                                    <p class="detail-label"><i class="ph ph-warning-circle"></i> EMERGENCY CONTACT</p>
-                                    <p class="contact-name">Primary Contact</p>
-                                    <p class="contact-phone"><i class="ph ph-phone"></i> <?= $emergencyContact ?></p>
-                                </div>
-                            </div>
-                            <div class="card colours-card">
-                                <h3>University Colours <i class="ph-fill ph-medal text-teal" style="float: right;"></i></h3>
-                                <div class="badges">
-                                    <div class="colour-badge"><div class="icon-wrap bg-blue"><i class="ph-fill ph-medal"></i></div><span>Excellence in Athletics</span></div>
-                                    <div class="colour-badge"><div class="icon-wrap bg-dark"><i class="ph-fill ph-star"></i></div><span>Top Scholarship</span></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="grid-col-right">
-                            <div class="card sport-history-card">
-                                <div class="card-header">
-                                    <h3><i class="ph ph-clock-counter-clockwise"></i> Sport History</h3>
-                                    <button class="btn-icon"><i class="ph ph-funnel"></i></button>
-                                </div>
-                                <table class="history-table">
-                                    <thead>
-                                        <tr>
-                                            <th>SEASON</th>
-                                            <th>SPORT</th>
-                                            <th>ROLE / RESULT</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td>Fall 2023</td>
-                                            <td><div class="sport-name"><div class="icon-circle"><i class="ph-fill ph-basketball"></i></div> Basketball</div></td>
-                                            <td><span class="status-badge varsity">Varsity</span></td>
-                                        </tr>
-                                        <tr>
-                                            <td>Spring 2023</td>
-                                            <td><div class="sport-name"><div class="icon-circle"><i class="ph-fill ph-swimming-pool"></i></div> Swimming</div></td>
-                                            <td><span class="status-badge club">Club</span></td>
-                                        </tr>
-                                        <tr>
-                                            <td>Fall 2022</td>
-                                            <td><div class="sport-name"><div class="icon-circle"><i class="ph-fill ph-person-simple-run"></i></div> Track & Field</div></td>
-                                            <td><span class="status-badge varsity">Varsity</span></td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                                <div class="card-footer">
-                                    <button class="btn-text">View Full History <i class="ph ph-caret-down"></i></button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Edit Profile View -->
-                <section id="edit-profile-view" class="view-section">
-                    <div class="page-header-card edit-mode hero-gradient">
-                        <div class="profile-summary">
-                            <img src="https://ui-avatars.com/api/?name=<?= urlencode($fullName) ?>&background=0D8ABC&color=fff&size=80" alt="Avatar" class="large-avatar">
-                            <div class="profile-info">
-                                <h2><?= $fullName ?></h2>
-                                <div class="tags">
-                                    <span class="tag"><i class="ph-fill ph-person-simple-run"></i> Varsity Track</span>
-                                    <span class="tag"><i class="ph-fill ph-student"></i> Senior</span>
-                                    <span class="tag active"><i class="ph-fill ph-check-circle"></i> Active Roster</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="header-action-buttons">
-                            <button class="btn btn-secondary" id="cancel-edit-btn">Cancel</button>
-                            <button class="btn btn-primary" id="save-profile-btn">Save Changes</button>
-                        </div>
-                    </div>
-                    <div class="edit-grid">
-                        <div class="edit-col-left">
-                            <div class="card form-card">
-                                <h3><i class="ph ph-user"></i> Personal Details</h3>
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label>First Name</label>
-                                        <input type="text" value="<?= $firstName ?>">
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Last Name</label>
-                                        <input type="text" value="<?= $lastName ?>">
-                                    </div>
-                                </div>
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label>Student ID</label>
-                                        <input type="text" value="<?= $indexNumber ?>" disabled>
-                                        <small class="form-hint">Contact administration to change ID</small>
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Date of Birth</label>
-                                        <input type="date" value="2001-09-15">
-                                    </div>
-                                </div>
-                                <div class="form-group full-width">
-                                    <label>University Email</label>
-                                    <input type="email" value="<?= $email ?>" disabled>
-                                </div>
-                            </div>
-                            <div class="card form-card physical-profile">
-                                <h3><i class="ph ph-activity"></i> Physical Profile</h3>
-                                <div class="form-row">
-                                    <div class="form-group error">
-                                        <label>Height (cm) <span class="required">*</span></label>
-                                        <div class="input-with-icon">
-                                            <input type="number" value="<?= $height ?>">
-                                            <i class="ph-fill ph-warning-circle"></i>
-                                        </div>
-                                        <small class="error-msg">Please enter a valid height in cm</small>
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Weight (kg)</label>
-                                        <input type="number" value="<?= $weight ?>">
-                                    </div>
-                                </div>
-                                <div class="performance-index">
-                                    <div class="circular-progress">
-                                        <svg viewBox="0 0 36 36" class="circular-chart">
-                                            <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                                            <path class="circle" stroke-dasharray="90, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                                        </svg>
-                                        <span>90%</span>
-                                    </div>
-                                    <p><strong>Px Performance Index</strong><br><span class="text-muted">Based on recent physical assessments. Update metrics to recalculate.</span></p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="edit-col-right">
-                            <div class="card form-card emergency-contact">
-                                <h3><i class="ph ph-warning-circle"></i> Emergency Contact</h3>
-                                <div class="form-group full-width">
-                                    <label>Primary Contact Name</label>
-                                    <input type="text" value="Primary Contact">
-                                </div>
-                                <div class="form-group full-width">
-                                    <label>Relationship</label>
-                                    <input type="text" value="Parent">
-                                </div>
-                                <div class="form-group full-width error">
-                                    <label>Phone Number</label>
-                                    <div class="input-with-icon">
-                                        <input type="text" value="<?= $emergencyContact ?>">
-                                        <i class="ph-fill ph-warning-circle"></i>
-                                    </div>
-                                    <small class="error-msg">Invalid phone format</small>
-                                </div>
-                            </div>
-                            <div class="card form-card local-address">
-                                <h3><i class="ph ph-map-pin"></i> Local Address</h3>
-                                <div class="form-group full-width">
-                                    <label>Street Address</label>
-                                    <input type="text" value="Campus West, Dormitory B, 41">
-                                </div>
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label>City</label>
-                                        <input type="text" value="University City">
-                                    </div>
-                                    <div class="form-group">
-                                        <label>ZIP Code</label>
-                                        <input type="text" value="10027">
-                                    </div>
-                                </div>
-                                <div class="map-placeholder">
-                                    <!-- map mockup -->
-                                    <div class="map-bg"></div>
-                                    <div class="map-pin"><i class="ph-fill ph-map-pin"></i></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Calendar View -->
-                <section id="calendar-view" class="view-section">
-                    <div class="calendar-header-card">
-                        <div class="cal-title">
-                            <h2><i class="ph ph-calendar-blank"></i> Week View</h2>
-                            <p>Oct 21 — Oct 27</p>
-                        </div>
-                        <div class="cal-controls">
-                            <div class="legend">
-                                <span class="legend-item training"><span class="dot"></span> TRAINING</span>
-                                <span class="legend-item match"><span class="dot"></span> MATCH</span>
-                            </div>
-                            <div class="cal-nav">
-                                <button class="btn-icon"><i class="ph ph-caret-left"></i></button>
-                                <button class="btn btn-secondary btn-sm">TODAY</button>
-                                <button class="btn-icon"><i class="ph ph-caret-right"></i></button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="calendar-grid">
-                        <div class="cal-day">
-                            <div class="day-header">MON <strong>21</strong></div>
-                            <div class="events-container">
-                                <div class="event-card training">
-                                    <p class="time">06:00 - 07:30</p>
-                                    <h4>Strength & Conditioning</h4>
-                                    <p class="location"><i class="ph ph-map-pin"></i> Weight Room A</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="cal-day">
-                            <div class="day-header">TUE <strong>22</strong></div>
-                            <div class="events-container">
-                                <div class="event-card training">
-                                    <p class="time">15:00 - 16:30</p>
-                                    <h4>Tactical Field Session</h4>
-                                    <p class="location"><i class="ph ph-map-pin"></i> Practice Pitch 2</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="cal-day">
-                            <div class="day-header">WED <strong>23</strong></div>
-                            <div class="events-container">
-                                <div class="event-card training">
-                                    <p class="time">07:00 - 08:00</p>
-                                    <h4>Recovery Swim</h4>
-                                    <p class="location"><i class="ph ph-map-pin"></i> Aquatic Center</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="cal-day active-day">
-                            <div class="day-header">THU <strong>24</strong></div>
-                            <div class="events-container">
-                                <div class="event-card match">
-                                    <span class="match-badge">MATCH</span>
-                                    <p class="time">18:00 - 20:30</p>
-                                    <h4>Away Match vs State Lions</h4>
-                                    <p class="location"><i class="ph-fill ph-bus"></i> AWAY KIT REQUIRED</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="cal-day">
-                            <div class="day-header">FRI <strong>25</strong></div>
-                            <div class="events-container">
-                                <div class="event-card training">
-                                    <p class="time">10:00 - 11:00</p>
-                                    <h4>Team Meeting</h4>
-                                    <p class="location"><i class="ph ph-video-camera"></i> Room 302</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="cal-day weekend">
-                            <div class="day-header">SAT <strong>26</strong></div>
-                            <div class="events-container empty"><div class="empty-text">REST DAY</div></div>
-                        </div>
-                        <div class="cal-day weekend">
-                            <div class="day-header">SUN <strong>27</strong></div>
-                            <div class="events-container empty"><div class="empty-text">REST DAY</div></div>
-                        </div>
-                    </div>
-                </section>
+                <?php require __DIR__ . '/partials/athlete_profile.php'; ?>
+                <?php require __DIR__ . '/partials/athlete_calendar.php'; ?>
 
             </div>
         </main>
