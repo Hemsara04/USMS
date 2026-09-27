@@ -1,0 +1,30 @@
+<?php
+// Run with XAMPP PHP. All test records are rolled back.
+require_once __DIR__ . '/../models/SportApplication.php';
+$db = Database::connect();
+$model = new SportApplication($db);
+function applicationCheck($ok, $message) {
+    if (!$ok) throw new RuntimeException($message);
+}
+$db->beginTransaction();
+try {
+    $athletes = $db->query('SELECT athlete_id FROM Athletic ORDER BY athlete_id LIMIT 2')->fetchAll(PDO::FETCH_COLUMN);
+    applicationCheck(count($athletes) === 2, 'Two athletes required for ownership checks.');
+    $sport = $db->query('SELECT sport_id FROM sports LIMIT 1')->fetchColumn();
+    $season = $db->query('SELECT season_id FROM seasons LIMIT 1')->fetchColumn();
+    $insert = $db->prepare('INSERT INTO sport_application (athletic_id, sport_id, season_id, status, rejection_reason) VALUES (?, ?, ?, ?, ?)');
+    $before = $model->getApplicationStats($athletes[0]);
+    foreach (['Pending', 'Shortlisted', 'Approved', 'Rejected'] as $status) {
+        $insert->execute([$athletes[0], $sport, $season, $status, 'Saved reason']);
+        $id = (int)$db->lastInsertId();
+        applicationCheck(!$model->deleteAthleteApplication($id, $athletes[1]), 'Another athlete must not delete the application.');
+        $apps = array_column($model->getAthleteApplications($athletes[0]), null, 'application_id');
+        applicationCheck(isset($apps[$id]) && $apps[$id]['rejection_reason'] === 'Saved reason', 'Saved details survive unauthorized deletion.');
+        applicationCheck($model->deleteAthleteApplication($id, $athletes[0]), 'Owner can delete a ' . $status . ' application.');
+        applicationCheck(!$model->deleteAthleteApplication($id, $athletes[0]), 'Repeated deletion reports missing application.');
+        applicationCheck($model->getApplicationStats($athletes[0]) === $before, 'Counts return to their original values.');
+    }
+    echo "PASS: deletion ownership, all statuses, saved rejection reason, missing applications and statistics.\n";
+} finally {
+    $db->rollBack();
+}

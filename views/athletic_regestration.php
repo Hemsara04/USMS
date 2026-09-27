@@ -67,13 +67,7 @@ $weekAhead = $now->modify('+7 days')->format('Y-m-d H:i:s');
 $upcomingEvents = count(array_filter(array_merge($upcoming['training'], $upcoming['matches']), function ($event) use ($weekAhead) {
     return $event['event_date'] . ' ' . $event['event_time'] < $weekAhead;
 }));
-$requestedWeek = $_GET['week'] ?? '';
-$weekDate = is_string($requestedWeek) ? DateTimeImmutable::createFromFormat('!Y-m-d', $requestedWeek) : false;
-if (!$weekDate || $weekDate->format('Y-m-d') !== $requestedWeek || $weekDate->format('Y') < 1900 || $weekDate->format('Y') > 2100) {
-    $weekDate = $now->setTime(0, 0);
-}
-$weekStart = $weekDate->modify('-' . ((int)$weekDate->format('N') - 1) . ' days');
-$weekEnd = $weekStart->modify('+7 days');
+[$weekStart, $weekEnd] = AthletePortal::calendarWeek($_GET['week'] ?? '', $now);
 $calendar = $portal->schedule($athleteId, $weekStart->format('Y-m-d'), $weekEnd->format('Y-m-d'));
 $calendarDays = [];
 foreach ($calendar as $type => $events) {
@@ -143,7 +137,7 @@ if (!empty($_SESSION['flash_error'])) {
                 <a href="#" class="nav-item <?= $currentView === 'dashboard-view' ? 'active' : '' ?>" data-target="dashboard-view" id="nav-dashboard"><i class="ph ph-squares-four"></i> Dashboard</a>
                 <a href="#" class="nav-item <?= in_array($currentView, ['apply-view', 'submission-view']) ? 'active' : '' ?>" data-target="apply-view" id="nav-apply"><i class="ph ph-file-text"></i> Apply for Sport</a>
                 <a href="#" class="nav-item <?= in_array($currentView, ['applications-view', 'application-details-view']) ? 'active' : '' ?>" data-target="applications-view" id="nav-applications"><i class="ph ph-list-dashes"></i> My Applications</a>
-                <a href="#" class="nav-item <?= $currentView === 'calendar-view' ? 'active' : '' ?>" data-target="calendar-view" id="nav-calendar"><i class="ph ph-calendar-blank"></i> Training Calendar</a>
+                <a href="?view=calendar-view" class="nav-item <?= $currentView === 'calendar-view' ? 'active' : '' ?>" id="nav-calendar"><i class="ph ph-calendar-blank"></i> Training Calendar</a>
                 <a href="#" class="nav-item <?= in_array($currentView, ['profile-view', 'edit-profile-view']) ? 'active' : '' ?>" data-target="profile-view" id="nav-profile"><i class="ph ph-user"></i> Profile</a>
             </nav>
             <div class="sidebar-footer">
@@ -454,7 +448,7 @@ if (!empty($_SESSION['flash_error'])) {
                 </section>
 
                 <!-- My Applications View -->
-                <section id="applications-view" class="view-section <?= $currentView === 'applications-view' ? 'active' : '' ?>">
+                <section id="applications-view" data-csrf="<?= athleteEscape($_SESSION['athlete_csrf']) ?>" class="view-section <?= $currentView === 'applications-view' ? 'active' : '' ?>">
                     <div class="page-header-card compact">
                         <div class="header-text">
                             <p class="breadcrumb">ATHLETE PORTAL</p>
@@ -539,7 +533,7 @@ if (!empty($_SESSION['flash_error'])) {
                                             <td>Season ID: <?= htmlspecialchars($app['season_id']) ?> (Year <?= htmlspecialchars($app['season_year']) ?>)</td>
                                             <td><?= date('Y-m-d', strtotime($app['applied_date'])) ?></td>
                                             <td><span class="status-badge <?= $badgeClass ?>"><?= $statusUpper ?></span></td>
-                                            <td><button class="btn-text view-details-btn" data-appid="<?= $app['application_id'] ?>" data-sport="<?= htmlspecialchars($app['sport_name']) ?>" data-season="Season ID: <?= htmlspecialchars($app['season_id']) ?> (Year <?= htmlspecialchars($app['season_year']) ?>)" data-status="<?= htmlspecialchars($app['status']) ?>" data-date="<?= date('Y-m-d', strtotime($app['applied_date'])) ?>" data-statement="<?= htmlspecialchars($app['statement_of_interest'] ?? '') ?>">View Details</button></td>
+                                            <td><button class="btn-text view-details-btn" data-appid="<?= $app['application_id'] ?>" data-sport="<?= htmlspecialchars($app['sport_name']) ?>" data-season="Season ID: <?= htmlspecialchars($app['season_id']) ?> (Year <?= htmlspecialchars($app['season_year']) ?>)" data-status="<?= htmlspecialchars($app['status']) ?>" data-date="<?= date('Y-m-d', strtotime($app['applied_date'])) ?>" data-rejection-reason="<?= athleteEscape($app['rejection_reason']) ?>" data-statement="<?= athleteEscape($app['statement_of_interest']) ?>">View Details</button> <button type="button" class="btn-text text-red delete-application-btn" data-appid="<?= (int)$app['application_id'] ?>">Delete</button></td>
                                         </tr>
                                     <?php endforeach; ?>
                                 <?php endif; ?>
@@ -557,52 +551,25 @@ if (!empty($_SESSION['flash_error'])) {
                         <button class="btn-text" id="back-to-apps-btn"><i class="ph ph-arrow-left"></i> MY APPLICATIONS</button>
                         <div class="title-row">
                             <h2>Application Details</h2>
-                            <span class="status-badge red-filled"><i class="ph-fill ph-x-circle"></i> Rejected</span>
+                            <span class="status-badge dark"></span>
                         </div>
-                        <p class="text-muted">Soccer • Fall 2024</p>
+                        <p class="text-muted"></p>
                     </div>
                     
                     <div class="details-grid">
                         <div class="details-main">
-                            <div class="alert-box error">
+                            <div class="alert-box error" id="application-rejection" style="display: none;">
                                 <div class="alert-icon"><i class="ph-fill ph-warning-circle"></i></div>
                                 <div class="alert-content">
                                     <h4>Reason for Rejection</h4>
-                                    <p>Medical clearance document expired. Please update your clearance and re-apply for the next available season.</p>
-                                    <div class="alert-actions">
-                                        <button class="btn btn-primary btn-sm">Re-apply for Sport</button>
-                                        <button class="btn btn-secondary btn-sm"><i class="ph ph-envelope"></i> Contact Coordinator</button>
-                                    </div>
+                                    <p id="application-rejection-reason"></p>
                                 </div>
                             </div>
-                            
                             <div class="card documents-card">
-                                <h3><i class="ph ph-file"></i> Application Documents</h3>
-                                <div class="doc-list">
-                                    <div class="doc-item">
-                                        <div class="doc-icon"><i class="ph-fill ph-file-pdf text-red"></i></div>
-                                        <div class="doc-info">
-                                            <strong>Academic_Transcript_2023.pdf</strong>
-                                            <p class="text-muted">Uploaded on Aug 12, 2024</p>
-                                        </div>
-                                        <div class="doc-actions">
-                                            <span class="status-badge green-light">Verified</span>
-                                            <button class="btn-icon"><i class="ph ph-download-simple"></i></button>
-                                        </div>
-                                    </div>
-                                    <div class="doc-item error-state">
-                                        <div class="doc-icon"><i class="ph-fill ph-file-pdf text-red"></i></div>
-                                        <div class="doc-info">
-                                            <strong>Medical_Clearance_Expired.pdf</strong>
-                                            <p class="text-red">Requires attention</p>
-                                        </div>
-                                        <div class="doc-actions">
-                                            <span class="status-badge red-light">Expired</span>
-                                            <button class="btn-icon"><i class="ph ph-upload-simple"></i></button>
-                                        </div>
-                                    </div>
-                                </div>
+                                <h3>Statement of Interest</h3>
+                                <p id="application-statement" style="white-space: pre-wrap;"></p>
                             </div>
+                            <button type="button" class="btn btn-secondary text-red delete-application-btn" id="delete-detail-application">Delete Application</button>
                         </div>
                         
                         <div class="details-sidebar">
@@ -621,7 +588,7 @@ if (!empty($_SESSION['flash_error'])) {
                                     <p class="value">May 12, 2024</p>
                                 </div>
                                 <div class="summary-row">
-                                    <p class="label">INDEX NUMBER</p>
+                                    <p class="label">APPLICATION REFERENCE</p>
                                     <p class="value font-mono">APP-2024-0002</p>
                                 </div>
                             </div>

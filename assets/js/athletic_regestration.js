@@ -334,9 +334,11 @@ document.addEventListener('DOMContentLoaded', () => {
                                             data-season="Season ID: ${app.season_id} (Year ${app.season_year})" 
                                             data-status="${escapeHtml(app.status)}" 
                                             data-date="${escapeHtml(dateApplied)}" 
+                                            data-rejection-reason="${escapeHtml(app.rejection_reason || '')}"
                                             data-statement="${escapeHtml(app.statement_of_interest || '')}">
                                             View Details
                                         </button>
+                                        <button type="button" class="btn-text text-red delete-application-btn" data-appid="${app.application_id}">Delete</button>
                                     </td>
                                 </tr>
                             `;
@@ -360,7 +362,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!str) return '';
         const div = document.createElement('div');
         div.textContent = str;
-        return div.innerHTML;
+        return div.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
 
     // View Details Buttons Handler
@@ -378,6 +380,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Update application-details-view if available
                 const detailsView = document.getElementById('application-details-view');
                 if (detailsView) {
+                    const rejection = document.getElementById('application-rejection');
+                    rejection.style.display = status === 'Rejected' ? '' : 'none';
+                    document.getElementById('application-rejection-reason').textContent =
+                        status === 'Rejected' ? (btn.dataset.rejectionReason.trim() || 'No rejection reason was provided.') : '';
+                    document.getElementById('application-statement').textContent = statement || 'No statement of interest provided.';
+                    document.getElementById('delete-detail-application').dataset.appid = appId;
                     const subtitle = detailsView.querySelector('.details-header p.text-muted');
                     if (subtitle && sport && season) subtitle.textContent = `${sport} • ${season}`;
 
@@ -392,7 +400,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (sport) summaryRows[0].textContent = sport;
                         if (season) summaryRows[1].textContent = season;
                         if (date) summaryRows[2].textContent = date;
-                        if (appId) summaryRows[3].textContent = `APP-2026-${String(appId).padStart(4, '0')}`;
+                        if (appId) summaryRows[3].textContent = `APP-${(date || '').slice(0, 4)}-${String(appId).padStart(4, '0')}`;
                     }
                 }
 
@@ -402,6 +410,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     bindViewDetailsButtons();
+
+    document.addEventListener('click', async (event) => {
+        const button = event.target.closest('.delete-application-btn');
+        if (!button || button.disabled || !button.dataset.appid) return;
+        if (!window.confirm('Delete this application permanently? This cannot be undone.')) return;
+        button.disabled = true;
+        const data = new FormData();
+        data.set('application_id', button.dataset.appid);
+        data.set('csrf_token', document.getElementById('applications-view').dataset.csrf);
+        try {
+            const response = await fetch('../controllers/AthleteController.php?action=delete_application', {
+                method: 'POST', body: data, headers: { 'Accept': 'application/json' }
+            });
+            const result = await response.json();
+            if (!response.ok || result.status !== 'success') {
+                throw new Error(result.message || 'Unable to delete the application.');
+            }
+            window.location.href = 'athletic_regestration.php?view=applications-view';
+        } catch (error) {
+            window.alert(error.message || 'Unable to delete the application. Please try again.');
+            button.disabled = false;
+        }
+    });
 
     // Real-time Search Filter for Applications Table
     if (appSearchInput && myAppsTable) {

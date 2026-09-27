@@ -4,6 +4,19 @@ class AthletePortal {
     private $db;
     public function __construct(PDO $db) { $this->db = $db; }
 
+    /** Monday-inclusive, next-Monday-exclusive range in Sri Lanka time. */
+    public static function calendarWeek($requestedWeek = '', ?DateTimeImmutable $now = null) {
+        $timezone = new DateTimeZone('Asia/Colombo');
+        $today = ($now ?? new DateTimeImmutable('now', $timezone))->setTimezone($timezone)->setTime(0, 0);
+        $date = is_string($requestedWeek) && preg_match('/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/D', $requestedWeek)
+            ? DateTimeImmutable::createFromFormat('!Y-m-d', $requestedWeek, $timezone) : false;
+        if (!$date || $date->format('Y-m-d') !== $requestedWeek || (int)$date->format('Y') < 1900 || (int)$date->format('Y') > 2100) {
+            $date = $today;
+        }
+        $start = $date->modify('-' . ((int)$date->format('N') - 1) . ' days');
+        return [$start, $start->modify('+7 days')];
+    }
+
     public function schedule($athleteId, $from, $to = null) {
         $training = "SELECT ts.*, s.sport_name, fac.facility_name,
             ts.session_date AS event_date, ts.start_time AS event_time,

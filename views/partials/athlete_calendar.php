@@ -4,14 +4,21 @@
         <div class="cal-controls">
             <div class="legend"><span class="legend-item training"><span class="dot"></span> TRAINING</span><span class="legend-item match"><span class="dot"></span> MATCH</span></div>
             <div class="cal-nav">
-                <a class="btn-icon" aria-label="Previous week" href="?view=calendar-view&amp;week=<?= $weekStart->modify('-7 days')->format('Y-m-d') ?>"><i class="ph ph-caret-left"></i></a>
-                <a class="btn btn-secondary btn-sm" href="?view=calendar-view">TODAY</a>
-                <a class="btn-icon" aria-label="Next week" href="?view=calendar-view&amp;week=<?= $weekEnd->format('Y-m-d') ?>"><i class="ph ph-caret-right"></i></a>
+                <a class="btn btn-secondary btn-sm" aria-label="Previous week" href="?view=calendar-view&amp;week=<?= $weekStart->modify('-7 days')->format('Y-m-d') ?>"><i class="ph ph-caret-left"></i> Previous week</a>
+                <a class="btn btn-secondary btn-sm" href="?view=calendar-view">This week</a>
+                <a class="btn btn-secondary btn-sm" aria-label="Next week" href="?view=calendar-view&amp;week=<?= $weekEnd->format('Y-m-d') ?>">Next week <i class="ph ph-caret-right"></i></a>
             </div>
         </div>
     </div>
-    <p class="schedule-note text-muted">Training for your approved sport registrations and assigned sessions; matches where your squad selection is approved. Times are in Sri Lanka time.</p>
-    <?php if (!$calendarDays): ?><p class="profile-notice">No training or matches scheduled for you this week.</p><?php endif; ?>
+    <form class="calendar-date-picker" method="get" action="athletic_regestration.php">
+        <input type="hidden" name="view" value="calendar-view">
+        <label for="calendar-date">Go to a date</label>
+        <input type="date" id="calendar-date" name="week" min="1900-01-01" max="2100-12-31" value="<?= $weekStart->format('Y-m-d') ?>" required>
+        <button class="btn btn-secondary btn-sm" type="submit">Show week</button>
+    </form>
+    <p class="schedule-note text-muted">Weeks run Monday–Sunday. Use Next week or choose a date to see future schedules. This week uses today's date when you open or refresh the calendar.</p>
+    <p class="schedule-note text-muted">Training for your approved sport registrations and assigned sessions; matches where your squad selection is approved. </p>
+    <?php if (!$calendarDays): ?><p class="profile-notice">No training or matches scheduled for you in the displayed week.</p><?php endif; ?>
     <div class="calendar-grid">
         <?php for ($i = 0; $i < 7; $i++): $day = $weekStart->modify("+$i days"); $events = $calendarDays[$day->format('Y-m-d')] ?? []; ?>
             <div class="cal-day <?= $i >= 5 ? 'weekend' : '' ?> <?= $day->format('Y-m-d') === $now->format('Y-m-d') ? 'active-day' : '' ?>">

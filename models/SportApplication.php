@@ -164,6 +164,17 @@ class SportApplication {
     }
 
     /**
+     * Delete only an application owned by the authenticated athlete.
+     */
+    public function deleteAthleteApplication($applicationId, $athleticId) {
+        $stmt = $this->db->prepare(
+            "DELETE FROM sport_application WHERE application_id = ? AND athletic_id = ?"
+        );
+        $stmt->execute([(int)$applicationId, (int)$athleticId]);
+        return $stmt->rowCount() === 1;
+    }
+
+    /**
      * Get application status counts for an athlete
      * 
      * @param int $athleticId

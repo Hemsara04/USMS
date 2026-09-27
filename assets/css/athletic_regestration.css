@@ -1665,3 +1665,28 @@ button:disabled { opacity: .6; cursor: wait; }
     .card { break-inside: avoid; box-shadow: none; }
     body, .app-container { height: auto; overflow: visible; background: white; }
 }
+
+/* Server-rendered calendar navigation. */
+#calendar-view .calendar-header-card,
+#calendar-view .cal-controls,
+#calendar-view .cal-nav,
+.calendar-date-picker {
+    flex-wrap: wrap;
+    gap: 12px;
+}
+.calendar-date-picker {
+    display: flex;
+    align-items: center;
+    margin-bottom: 16px;
+}
+.calendar-date-picker input {
+    font: inherit;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--card-bg);
+    color: var(--text-main);
+}
+#calendar-view .day-header {
+    min-height: 84px;
+}
