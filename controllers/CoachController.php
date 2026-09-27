@@ -78,8 +78,34 @@ class CoachController {
         $focusArea     = trim($_POST['focus_area'] ?? '');
         $notes         = trim($_POST['notes'] ?? '');
 
+        if (empty($sportId)) {
+            $_SESSION['flash_error'] = 'Please select a sport discipline.';
+            header('Location: ../views/coach_training_sessions.php');
+            exit;
+        }
+
+        if (empty($facilityId)) {
+            $_SESSION['flash_error'] = 'Please select a venue / facility.';
+            header('Location: ../views/coach_training_sessions.php');
+            exit;
+        }
+
         if (empty($sessionDate) || empty($startTime)) {
             $_SESSION['flash_error'] = 'Session date and start time are required.';
+            header('Location: ../views/coach_training_sessions.php');
+            exit;
+        }
+
+        $today = date('Y-m-d');
+        $currentTime = date('H:i');
+        if ($sessionDate < $today) {
+            $_SESSION['flash_error'] = 'Cannot schedule a training session on a past date.';
+            header('Location: ../views/coach_training_sessions.php');
+            exit;
+        }
+
+        if ($sessionDate === $today && substr($startTime, 0, 5) < $currentTime) {
+            $_SESSION['flash_error'] = 'Session start time cannot be earlier than current time for today.';
             header('Location: ../views/coach_training_sessions.php');
             exit;
         }
@@ -126,6 +152,13 @@ class CoachController {
 
         if ($sessionId <= 0 || empty($sessionDate) || empty($startTime)) {
             $_SESSION['flash_error'] = 'Invalid session details or required fields missing.';
+            header('Location: ../views/coach_training_sessions.php');
+            exit;
+        }
+
+        $today = date('Y-m-d');
+        if ($sessionDate < $today) {
+            $_SESSION['flash_error'] = 'Cannot update a session to a past date.';
             header('Location: ../views/coach_training_sessions.php');
             exit;
         }

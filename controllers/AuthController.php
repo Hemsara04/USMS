@@ -30,9 +30,29 @@ class AuthController {
         $password   = $_POST['password'] ?? '';
         $selectedRole = trim($_POST['role'] ?? '');
 
-        // Validation
+        // Validation & Logical in-memory guards (Prevent redundant DB calls)
         if (empty($identifier) || empty($password)) {
             $_SESSION['error'] = 'Please enter both username/email and password.';
+            header('Location: ../views/login.php');
+            exit;
+        }
+
+        if (strpos($identifier, '@') !== false) {
+            if (!filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
+                $_SESSION['error'] = 'Invalid email address format. Please enter a valid email.';
+                header('Location: ../views/login.php');
+                exit;
+            }
+        } else {
+            if (strlen($identifier) < 3 || !preg_match('/^[a-zA-Z0-9_.-]+$/', $identifier)) {
+                $_SESSION['error'] = 'Invalid username format. Must be at least 3 characters.';
+                header('Location: ../views/login.php');
+                exit;
+            }
+        }
+
+        if (strlen($password) < 4) {
+            $_SESSION['error'] = 'Password must be at least 4 characters.';
             header('Location: ../views/login.php');
             exit;
         }
@@ -151,9 +171,9 @@ class AuthController {
             }
         }
 
-        // Validation: Must be a valid email and end with @uoc.ac.lk
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL) || !str_ends_with(strtolower($email), '@uoc.ac.lk')) {
-            $_SESSION['error'] = 'Invalid email domain. Only University of Colombo emails (@uoc.ac.lk) are allowed.';
+        // Validation: Must be a valid email address (standard email format, uni email not strictly forced)
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $_SESSION['error'] = 'Please enter a valid email address (e.g. name@example.com).';
             $preserveInput();
             header('Location: ../views/register.php');
             exit;
@@ -412,8 +432,8 @@ class AuthController {
             exit;
         }
 
-        if (strlen($newPassword) < 6) {
-            $_SESSION['flash_error'] = 'New password must be at least 6 characters long.';
+        if (strlen($newPassword) < 8) {
+            $_SESSION['flash_error'] = 'New password must be at least 8 characters long.';
             header('Location: ../views/profile.php#security');
             exit;
         }

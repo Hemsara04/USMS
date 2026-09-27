@@ -116,8 +116,9 @@ $flashError   = $_SESSION['flash_error'] ?? null;
             color: #15803D;
         }
         .attendance-radio-group label:has(input[value="Absent"]:checked) {
-            background: #FEE2E2;
-            color: #DC2626;
+            background: #F1F5F9;
+            color: #475467;
+            border-color: #94A3B8;
         }
         .attendance-radio-group label:has(input[value="Excused"]:checked) {
             background: #FEF3C7;
@@ -141,8 +142,8 @@ $flashError   = $_SESSION['flash_error'] ?? null;
             </div>
         <?php endif; ?>
         <?php if (!empty($flashError)): ?>
-            <div style="background:#FEF2F2; border:1px solid #FECACA; color:#DC2626; padding:10px 14px; border-radius:8px; margin-bottom:14px; font-size:13.5px; display:flex; align-items:center; gap:8px;">
-                <span class="material-symbols-outlined" style="font-size:18px;">error</span>
+            <div style="background:#FFFBEB; border:1px solid #FDE68A; color:#B45309; padding:10px 14px; border-radius:8px; margin-bottom:14px; font-size:13.5px; display:flex; align-items:center; gap:8px;">
+                <span class="material-symbols-outlined" style="font-size:18px;">warning</span>
                 <span><?= htmlspecialchars($flashError) ?></span>
             </div>
         <?php endif; ?>
@@ -198,9 +199,9 @@ $flashError   = $_SESSION['flash_error'] ?? null;
             <div class="stat-card">
                 <div>
                     <div class="stat-label">Medically Inactive</div>
-                    <div class="stat-value" style="color: #DC2626;"><?= $stats['medically_inactive'] ?></div>
+                    <div class="stat-value" style="color: #D97706;"><?= $stats['medically_inactive'] ?></div>
                 </div>
-                <div class="stat-icon" style="color: #DC2626; background: #FEF2F2;">
+                <div class="stat-icon" style="color: #D97706; background: #FFFBEB;">
                     <span class="material-symbols-outlined">health_and_safety</span>
                 </div>
             </div>
@@ -346,26 +347,26 @@ $flashError   = $_SESSION['flash_error'] ?? null;
             </div>
             <button type="button" class="modal-close" onclick="closeModal('newSessionModal')">&times;</button>
         </div>
-        <form action="../controllers/CoachController.php?action=schedule_session" method="POST">
+        <form action="../controllers/CoachController.php?action=schedule_session" method="POST" onsubmit="return validateNewSessionForm(event)">
             <div class="modal-body">
                 <div class="form-row">
                     <div class="form-group">
-                        <label class="form-label">Sport Discipline</label>
+                        <label class="form-label">Sport Discipline *</label>
                         <select name="sport_id" class="form-select" required>
-                            <option value="">Select Sport…</option>
+                            <option value="" selected disabled>Select Sport Discipline…</option>
                             <?php foreach ($allSports as $sp): ?>
-                                <option value="<?= $sp['sport_id'] ?>" <?= ($sp['sport_id'] == 1) ? 'selected' : '' ?>>
+                                <option value="<?= $sp['sport_id'] ?>">
                                     <?= htmlspecialchars($sp['sport_name']) ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Venue / Facility</label>
+                        <label class="form-label">Venue / Facility *</label>
                         <select name="facility_id" class="form-select" required>
-                            <option value="">Select Venue…</option>
+                            <option value="" selected disabled>Select Venue / Facility…</option>
                             <?php foreach ($allFacilities as $fac): ?>
-                                <option value="<?= $fac['facility_id'] ?>" <?= ($fac['facility_id'] == 2) ? 'selected' : '' ?>>
+                                <option value="<?= $fac['facility_id'] ?>">
                                     <?= htmlspecialchars($fac['facility_name']) ?>
                                 </option>
                             <?php endforeach; ?>
@@ -375,29 +376,35 @@ $flashError   = $_SESSION['flash_error'] ?? null;
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label class="form-label">Session Date</label>
-                        <input type="date" name="session_date" class="form-input" value="<?= date('Y-m-d', strtotime('+1 day')) ?>" required>
+                        <label class="form-label">Session Date *</label>
+                        <input type="date" id="newSessionDate" name="session_date" class="form-input" 
+                               value="<?= date('Y-m-d') ?>" min="<?= date('Y-m-d') ?>" required 
+                               onchange="validateSessionDateTimeInputs('newSessionDate', 'newSessionTime')">
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Start Time</label>
-                        <input type="time" name="start_time" class="form-input" value="16:30" required>
+                        <label class="form-label">Start Time *</label>
+                        <input type="time" id="newSessionTime" name="start_time" class="form-input" 
+                               value="<?= date('H:00', strtotime('+1 hour')) ?>" required 
+                               onchange="validateSessionDateTimeInputs('newSessionDate', 'newSessionTime')">
                     </div>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label class="form-label">Duration</label>
-                        <select name="duration_minutes" class="form-select">
+                        <label class="form-label">Duration *</label>
+                        <select name="duration_minutes" class="form-select" required>
+                            <option value="" selected disabled>Select Duration…</option>
                             <option value="01:00:00">1 Hour</option>
-                            <option value="01:30:00" selected>1.5 Hours (90 mins)</option>
+                            <option value="01:30:00">1.5 Hours (90 mins)</option>
                             <option value="02:00:00">2 Hours</option>
                             <option value="02:30:00">2.5 Hours</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Session Type</label>
-                        <select name="session_type" class="form-select">
-                            <option value="Practice" selected>Team Practice</option>
+                        <label class="form-label">Session Type *</label>
+                        <select name="session_type" class="form-select" required>
+                            <option value="" selected disabled>Select Session Type…</option>
+                            <option value="Practice">Team Practice</option>
                             <option value="Tactical Drill">Tactical Drill</option>
                             <option value="Conditioning">Strength & Conditioning</option>
                             <option value="Trial Match">Internal Trial Match</option>
@@ -407,12 +414,12 @@ $flashError   = $_SESSION['flash_error'] ?? null;
 
                 <div class="form-group">
                     <label class="form-label">Tactical Focus Area</label>
-                    <input type="text" name="focus_area" class="form-input" placeholder="e.g. Set Pieces, Counter-Pressing, Zone Defense…" value="Defensive Transition & Set-Piece Drills" required>
+                    <input type="text" name="focus_area" class="form-input" placeholder="e.g. Set Pieces, Counter-Pressing, Zone Defense…" value="">
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Session Notes & Equipment Needs</label>
-                    <textarea name="notes" class="form-textarea" placeholder="Detailed coaching notes, required cones, bibs, water bottles…" rows="3">Bring full match kit, shin guards, and hydration fluids. Video tactical review starts 15 mins prior.</textarea>
+                    <textarea name="notes" class="form-textarea" placeholder="Detailed coaching notes, required cones, bibs, water bottles…" rows="3"></textarea>
                 </div>
             </div>
             <div class="modal-footer">
@@ -436,7 +443,7 @@ $flashError   = $_SESSION['flash_error'] ?? null;
             </div>
             <button type="button" class="modal-close" onclick="closeModal('editSessionModal')">&times;</button>
         </div>
-        <form action="../controllers/CoachController.php?action=update_session" method="POST">
+        <form action="../controllers/CoachController.php?action=update_session" method="POST" onsubmit="return validateEditSessionForm(event)">
             <input type="hidden" name="session_id" id="editSessionId">
             <div class="modal-body">
                 <div class="form-row">
@@ -465,7 +472,7 @@ $flashError   = $_SESSION['flash_error'] ?? null;
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Session Date</label>
-                        <input type="date" name="session_date" id="editSessionDate" class="form-input" required>
+                        <input type="date" name="session_date" id="editSessionDate" class="form-input" min="<?= date('Y-m-d') ?>" required>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Start Time</label>
@@ -515,7 +522,7 @@ $flashError   = $_SESSION['flash_error'] ?? null;
     <div class="modal" style="width: 440px;">
         <div class="modal-header">
             <div style="display: flex; align-items: center; gap: 8px;">
-                <span class="material-symbols-outlined" style="color: #DC2626; font-size: 22px;">warning</span>
+                <span class="material-symbols-outlined" style="color: #D97706; font-size: 22px;">warning</span>
                 <span class="modal-title">Cancel Training Session</span>
             </div>
             <button type="button" class="modal-close" onclick="closeModal('deleteSessionModal')">&times;</button>
@@ -526,7 +533,7 @@ $flashError   = $_SESSION['flash_error'] ?? null;
                 <p style="font-size: 14px; color: var(--text-1); line-height: 1.5; margin-bottom: 12px;">
                     Are you sure you want to permanently cancel and remove <strong id="deleteSessionLabel">this session</strong>?
                 </p>
-                <div style="background: #FEF2F2; border: 1px solid #FECACA; border-radius: 6px; padding: 10px 14px; font-size: 12.5px; color: #991B1B; line-height: 1.4;">
+                <div style="background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 6px; padding: 10px 14px; font-size: 12.5px; color: #B45309; line-height: 1.4;">
                     <span class="material-symbols-outlined" style="font-size: 15px; vertical-align: middle;">info</span>
                     All recorded attendance logs for this session will also be deleted from the database.
                 </div>
@@ -722,6 +729,54 @@ function filterSessions(status, btn) {
             row.style.display = (row.dataset.status === status) ? '' : 'none';
         }
     });
+}
+
+function validateSessionDateTimeInputs(dateFieldId, timeFieldId) {
+    var dInput = document.getElementById(dateFieldId);
+    var tInput = document.getElementById(timeFieldId);
+    if (!dInput || !tInput) return true;
+
+    var now = new Date();
+    var year = now.getFullYear();
+    var month = String(now.getMonth() + 1).padStart(2, '0');
+    var day = String(now.getDate()).padStart(2, '0');
+    var todayStr = year + '-' + month + '-' + day;
+
+    if (dInput.value < todayStr) {
+        alert('Cannot select a past date.');
+        dInput.value = todayStr;
+        return false;
+    }
+
+    if (dInput.value === todayStr) {
+        var currentHours = String(now.getHours()).padStart(2, '0');
+        var currentMinutes = String(now.getMinutes()).padStart(2, '0');
+        var currentTimeStr = currentHours + ':' + currentMinutes;
+        if (tInput.value < currentTimeStr) {
+            alert('Session start time cannot be earlier than current time for today.');
+            now.setHours(now.getHours() + 1);
+            var nextH = String(now.getHours()).padStart(2, '0');
+            tInput.value = nextH + ':00';
+            return false;
+        }
+    }
+    return true;
+}
+
+function validateNewSessionForm(e) {
+    if (!validateSessionDateTimeInputs('newSessionDate', 'newSessionTime')) {
+        e.preventDefault();
+        return false;
+    }
+    return true;
+}
+
+function validateEditSessionForm(e) {
+    if (!validateSessionDateTimeInputs('editSessionDate', 'editStartTime')) {
+        e.preventDefault();
+        return false;
+    }
+    return true;
 }
 </script>
 <script src="../assets/js/dashboard.js"></script>

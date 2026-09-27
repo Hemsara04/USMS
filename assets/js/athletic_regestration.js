@@ -509,4 +509,39 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    // Top-header Profile Navigation
+    const topUserProfile = document.getElementById('topbar-user-profile');
+    if (topUserProfile) {
+        topUserProfile.addEventListener('click', () => {
+            switchView('profile-view');
+        });
+    }
+});
+
+// Athlete Notification Toggle (Global function for inline onclick and listeners)
+function toggleAthleteNotif(eventOrState) {
+    const dropdown = document.getElementById('athleteNotifDropdown');
+    if (!dropdown) return;
+    
+    if (typeof eventOrState === 'boolean') {
+        dropdown.style.display = eventOrState ? 'block' : 'none';
+        return;
+    }
+    
+    if (eventOrState && eventOrState.stopPropagation) {
+        eventOrState.stopPropagation();
+    }
+    
+    const isVisible = dropdown.style.display === 'block';
+    dropdown.style.display = isVisible ? 'none' : 'block';
+}
+
+// Close athlete notification dropdown when clicking outside
+document.addEventListener('click', (e) => {
+    const wrap = document.querySelector('.athlete-notif-wrap');
+    const dropdown = document.getElementById('athleteNotifDropdown');
+    if (dropdown && wrap && !wrap.contains(e.target)) {
+        dropdown.style.display = 'none';
+    }
 });

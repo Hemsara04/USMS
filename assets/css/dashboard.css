@@ -10,62 +10,62 @@
 
 /* ---------- CSS VARIABLES ---------- */
 :root {
-    /* Layout */
-    --sidebar-w: 236px;
-    --header-h: 56px;
+    /* Layout — Matched to Athlete UI */
+    --sidebar-w: 260px;
+    --header-h: 70px;
 
-    /* Primary & Sidebar (Screenshot 3: #1B263B) */
-    --primary: #1B263B;
-    --side-bg: #1B263B;
+    /* Primary & Sidebar — Matched to Athlete Deep Navy (#041427) */
+    --primary: #041427;
+    --side-bg: #041427;
     --side-border: rgba(255,255,255,0.08);
-    --side-text: #94A3B8;
+    --side-text: #cbd5e1;
     --side-text-hover: #FFFFFF;
     --side-text-active: #FFFFFF;
-    --side-hover: rgba(255,255,255,0.06);
-    --side-active: #008080;
+    --side-hover: #102640;
+    --side-active: #0099ab;
 
-    /* Secondary / Accent (Screenshot 3: #008080) */
-    --accent: #008080;
-    --accent-hover: #006666;
-    --accent-dark: #004D40;
-    --accent-bg: rgba(0, 128, 128, 0.12);
+    /* Secondary / Accent — Matched to Athlete Teal (#0099ab) */
+    --accent: #0099ab;
+    --accent-hover: #007a89;
+    --accent-dark: #005f6b;
+    --accent-bg: rgba(0, 153, 171, 0.12);
 
-    /* Tertiary (Screenshot 3: #415A77) */
-    --tertiary: #415A77;
+    /* Tertiary / Navy accent */
+    --tertiary: #1e3a8a;
 
-    /* Surfaces (Screenshot 3: #F8F9FA) */
-    --bg: #F8F9FA;
+    /* Surfaces — Clean light background matching Athlete UI */
+    --bg: #f8fafc;
     --card: #FFFFFF;
     --card-hover: #F1F5F9;
 
     /* Text */
-    --text: #2D3748;
-    --text-2: #5A6A80;
-    --text-3: #718096;
+    --text: #1e293b;
+    --text-2: #64748b;
+    --text-3: #94a3b8;
 
     /* Borders */
     --border: #E2E8F0;
     --border-light: #F1F5F9;
 
-    /* Status */
-    --danger: #EF4444;
-    --danger-bg: #FEF2F2;
-    --danger-border: #FECACA;
+    /* Status — NO RED (Per supervisor guideline, using Amber Gold / Indigo / Emerald) */
+    --danger: #d97706; /* Amber-gold */
+    --danger-bg: #FFFBEB;
+    --danger-border: #FDE68A;
     --warn: #F59E0B;
     --warn-bg: #FFFBEB;
     --warn-border: #FDE68A;
-    --ok: #22C55E;
-    --ok-bg: #F0FDF4;
-    --ok-border: #BBF7D0;
+    --ok: #10b981;
+    --ok-bg: #ECFDF5;
+    --ok-border: #A7F3D0;
 
     /* Misc */
     --r: 8px;
     --r-lg: 12px;
     --shadow-xs: 0 1px 2px rgba(0,0,0,0.04);
     --shadow: 0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
-    --shadow-lg: 0 4px 12px rgba(0,0,0,0.08);
+    --shadow-lg: 0 4px 15px rgba(0,0,0,0.05);
     --ease: 150ms ease;
-    --font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --font: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 }
 
 /* ---------- BASE ---------- */
@@ -117,38 +117,70 @@ body.dashboard {
     letter-spacing: -0.02em;
 }
 
+/* Athlete-style sidebar header & logo */
+.sidebar-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 24px 20px 24px;
+    border-bottom: 1px solid var(--side-border);
+    flex-shrink: 0;
+}
+
+.logo-icon {
+    font-size: 28px;
+    color: var(--accent);
+}
+
+.logo-text h1 {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: #fff;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.logo-text p {
+    font-size: 10px;
+    color: #94a3b8;
+    letter-spacing: 1px;
+    margin: 0;
+    font-weight: 600;
+}
+
 .sidebar-nav {
     flex: 1;
-    padding: 16px 10px;
+    padding: 16px 12px;
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 6px;
     overflow-y: auto;
 }
 
-.sidebar-link {
+.sidebar-link, .nav-item {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 9px 14px;
-    border-radius: var(--r);
+    gap: 12px;
+    padding: 11px 16px;
+    border-radius: 6px;
     color: var(--side-text);
     font-weight: 500;
     font-size: 14px;
     text-decoration: none;
-    transition: all var(--ease);
+    transition: all 0.2s ease;
     cursor: pointer;
 }
-.sidebar-link:hover {
+.sidebar-link:hover, .nav-item:hover {
     background: var(--side-hover);
     color: var(--side-text-hover);
 }
-.sidebar-link.active {
+.sidebar-link.active, .nav-item.active {
     background: var(--side-active);
     color: var(--side-text-active);
     font-weight: 600;
 }
-.sidebar-link .material-symbols-outlined {
+.sidebar-link .material-symbols-outlined, .nav-item .material-symbols-outlined {
     font-size: 20px;
     width: 22px;
     text-align: center;
@@ -156,12 +188,18 @@ body.dashboard {
 }
 
 .sidebar-section-label {
-    font-size: 11px;
+    font-size: 10.5px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: rgba(255,255,255,0.25);
-    padding: 18px 14px 6px;
+    color: rgba(255,255,255,0.3);
+    padding: 16px 16px 6px;
+}
+
+.sidebar-footer {
+    padding: 16px 12px;
+    border-top: 1px solid var(--side-border);
+    flex-shrink: 0;
 }
 
 /* ======================================
@@ -227,12 +265,52 @@ body.dashboard {
 .notif-dot {
     position: absolute; top: 6px; right: 6px;
     width: 7px; height: 7px;
-    background: var(--danger); border-radius: 50%;
+    background: var(--accent); /* Teal, non-red */
+    border-radius: 50%;
     border: 2px solid var(--card);
 }
 
+/* Athlete-Style User Profile Pill in Topbar */
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    padding: 6px 10px;
+    border-radius: 12px;
+    transition: all var(--ease);
+    text-decoration: none;
+    color: inherit;
+    border: 1px solid transparent;
+}
+.user-profile:hover {
+    background: var(--bg);
+    border-color: var(--border);
+}
+.user-profile .user-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+.user-profile .user-name {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.2;
+}
+.user-profile .user-role {
+    font-size: 11.5px;
+    color: var(--text-2);
+}
+.user-profile .avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
 .user-avatar {
-    width: 34px; height: 34px;
+    width: 36px; height: 36px;
     border-radius: 50%;
     background: var(--side-bg);
     color: #fff;
@@ -883,7 +961,7 @@ table.data-table {
 /* ======================================
    PAGE TITLE & MEDICAL ENHANCEMENTS
    ====================================== */
-.page-title-row {
+.page-title-row, .admin-page-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -891,11 +969,23 @@ table.data-table {
     margin-bottom: 20px;
     flex-wrap: wrap;
 }
-.page-title {
+.page-title-row > div:first-child, .admin-page-header > div:first-child {
+    flex: 1;
+    min-width: 260px;
+}
+.page-title, .admin-page-header h1, .admin-page-header h2 {
     font-size: 22px;
     font-weight: 800;
     color: var(--text);
     letter-spacing: -0.02em;
+    margin: 0 0 4px 0;
+}
+.page-title-row p, .admin-page-header p, .page-title-desc {
+    font-size: 13.5px;
+    color: var(--text-3, #64748b);
+    margin: 0;
+    line-height: 1.45;
+    font-weight: 400;
 }
 
 /* Tab Counter Pill */
@@ -1255,10 +1345,10 @@ table.data-table {
     transition: transform 0.16s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .usms-confirm-card.danger {
-    border-top: 4px solid #EF4444;
+    border-top: 4px solid #D97706;
 }
 .usms-confirm-card.teal, .usms-confirm-card.success {
-    border-top: 4px solid #008080;
+    border-top: 4px solid #0099ab;
 }
 .usms-confirm-card.warning {
     border-top: 4px solid #F59E0B;
@@ -1286,21 +1376,21 @@ table.data-table {
     color: #D97706;
 }
 .usms-confirm-icon.danger {
-    background: #FEF2F2;
-    color: #DC2626;
+    background: #FFFBEB;
+    color: #D97706;
 }
 .usms-confirm-icon.success, .usms-confirm-icon.teal {
-    background: rgba(0, 128, 128, 0.12);
-    color: #008080;
+    background: rgba(0, 153, 171, 0.12);
+    color: #0099ab;
 }
 .usms-confirm-title {
     font-size: 16px;
     font-weight: 700;
-    color: #1B263B;
+    color: #1e293b;
 }
 .usms-confirm-msg {
     font-size: 13.5px;
-    color: #415A77;
+    color: #64748b;
     line-height: 1.5;
     margin-bottom: 22px;
     padding-left: 52px;
@@ -1341,7 +1431,7 @@ table.data-table {
 }
 
 .announcement-card.priority-urgent {
-    border-left: 4px solid #EF4444;
+    border-left: 4px solid #D97706; /* Amber gold, non-red */
 }
 
 .announcement-card.priority-important {

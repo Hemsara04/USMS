@@ -37,10 +37,26 @@ try {
     $headerNotifs = [];
 }
 $notifCount = count($headerNotifs);
+
+$portalMap = [
+    'System_Admin'    => 'Admin Console',
+    'Admin'           => 'Admin Console',
+    'TIC'             => 'TIC Operations',
+    'Coach'           => 'Coach Portal',
+    'Athlete'         => 'Athlete Portal',
+    'Medical_Officer' => 'Medical Center',
+    'Physiotherapist' => 'Medical Center',
+    'President'       => 'President Dashboard'
+];
+$portalLabel = $portalMap[$headerRole] ?? 'Portal';
 ?>
 <header class="header">
     <div class="header-left">
-        <h1 class="header-title"><?= $pageTitle ?? 'Dashboard' ?></h1>
+        <div class="header-breadcrumb" style="display: flex; align-items: center; gap: 8px; font-size: 13.5px;">
+            <span class="header-badge" style="font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; padding: 3px 8px; border-radius: 6px; background: rgba(0, 153, 171, 0.1); color: var(--teal);"><?= htmlspecialchars($portalLabel) ?></span>
+            <span style="color: var(--text-3); opacity: 0.4;">/</span>
+            <span style="font-weight: 600; color: var(--text-2); font-size: 13.5px;"><?= htmlspecialchars($pageTitle ?? 'Overview') ?></span>
+        </div>
     </div>
     <div class="header-actions">
         <!-- Notification Dropdown -->
@@ -70,9 +86,9 @@ $notifCount = count($headerNotifs);
                                 $pIcon = 'campaign';
                                 $pBg = '#F0FDFA';
                                 if ($n['priority'] === 'Urgent') {
-                                    $pColor = '#EF4444';
-                                    $pIcon = 'emergency';
-                                    $pBg = '#FEF2F2';
+                                    $pColor = '#D97706'; /* Amber, non-red */
+                                    $pIcon = 'campaign';
+                                    $pBg = '#FFFBEB';
                                 } elseif ($n['priority'] === 'Important') {
                                     $pColor = '#D97706';
                                     $pIcon = 'announcement';
@@ -119,11 +135,15 @@ $notifCount = count($headerNotifs);
             </div>
         </div>
 
-        <!-- User Profile Popover -->
+        <!-- User Profile Popover (Athlete-Style Pill) -->
         <div class="header-dropdown-wrap">
-            <button type="button" class="icon-btn" id="profileDropdownBtn" title="Account Profile (<?= htmlspecialchars($headerFullName) ?>)" onclick="toggleHeaderDropdown('profileDropdown')" style="border-radius: 50%;">
-                <span class="material-symbols-outlined" style="font-size: 22px;">account_circle</span>
-            </button>
+            <div class="user-profile" id="profileDropdownBtn" onclick="toggleHeaderDropdown('profileDropdown')" role="button" tabindex="0" title="Account Profile (<?= htmlspecialchars($headerFullName) ?>)">
+                <div class="user-info">
+                    <span class="user-name"><?= htmlspecialchars($headerFullName) ?></span>
+                    <span class="user-role"><?= htmlspecialchars($headerRole) ?></span>
+                </div>
+                <img src="https://ui-avatars.com/api/?name=<?= urlencode($headerFullName) ?>&background=0099ab&color=fff&size=40" alt="Avatar" class="avatar">
+            </div>
             <div class="header-dropdown-menu" id="profileDropdown">
                 <div class="header-dropdown-header">
                     <span class="header-dropdown-title">Account Profile</span>
@@ -168,11 +188,6 @@ $notifCount = count($headerNotifs);
                 </div>
             </div>
         </div>
-
-        <!-- Quick Logout button -->
-        <a href="../controllers/AuthController.php?action=logout" class="icon-btn" title="Logout">
-            <span class="material-symbols-outlined">logout</span>
-        </a>
     </div>
 </header>
 

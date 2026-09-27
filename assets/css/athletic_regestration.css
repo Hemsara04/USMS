@@ -8,8 +8,10 @@
     --primary-hover: #007a89;
     --card-bg: #ffffff;
     --border-color: #e2e8f0;
-    --error: #ef4444;
-    --match-red: #dc2626;
+    --error: #d97706; /* Amber warning (No red per supervisor guideline) */
+    --match-red: #4338ca; /* Royal indigo for fixtures/matches */
+    --match-indigo: #4338ca;
+    --warning: #d97706;
     
     --radius-sm: 6px;
     --radius-md: 12px;
@@ -166,10 +168,11 @@ body {
     position: absolute;
     top: 0;
     right: 2px;
-    width: 6px;
-    height: 6px;
-    background-color: var(--error);
+    width: 7px;
+    height: 7px;
+    background-color: var(--primary); /* Teal non-red indicator */
     border-radius: 50%;
+    box-shadow: 0 0 0 2px #ffffff;
 }
 
 .user-profile {
@@ -177,6 +180,21 @@ body {
     align-items: center;
     gap: 12px;
     cursor: pointer;
+    padding: 6px 10px;
+    border-radius: var(--radius-md);
+    transition: var(--transition);
+}
+
+.user-profile:hover {
+    background-color: #f1f5f9;
+}
+
+/* Athlete Notification Dropdown */
+.athlete-notif-dropdown {
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+}
+.notif-dropdown-item:hover {
+    background-color: #f8fafc !important;
 }
 
 .user-info {
@@ -1070,9 +1088,14 @@ body {
     gap: 6px;
 }
 
-.badge-red {
+.badge-red, .badge-indigo {
     background-color: var(--match-red);
     color: white;
+}
+
+.badge-amber {
+    background-color: #fef3c7;
+    color: #b45309;
 }
 
 .badge-teal {
@@ -1648,7 +1671,7 @@ body {
 /* Athlete profile and personal schedule */
 .profile-notice, .profile-error { padding: 14px 18px; margin-bottom: 20px; border-radius: 8px; }
 .profile-notice { background: #e8f6f3; color: #155e51; }
-.profile-error { background: #fff1f2; color: #9f1239; }
+.profile-error { background: #fef3c7; color: #b45309; }
 .profile-error[hidden] { display: none; }
 .schedule-note { margin: 0 0 20px; }
 .cal-nav a { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }

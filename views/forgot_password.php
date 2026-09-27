@@ -36,9 +36,9 @@ $securityQuestions = [
             gap: 8px;
         }
         .alert-error {
-            background-color: #FEE2E2;
-            color: #DC2626;
-            border: 1px solid #FECACA;
+            background-color: #FFFBEB;
+            color: #B45309;
+            border: 1px solid #FDE68A;
         }
         .alert-success {
             background-color: #F0FDF4;

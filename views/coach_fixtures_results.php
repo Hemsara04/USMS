@@ -125,9 +125,9 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
             border: 1px solid #FDE68A;
         }
         .score-pill.lost {
-            background: #FEE2E2;
-            color: #DC2626;
-            border: 1px solid #FECACA;
+            background: #F1F5F9;
+            color: #475467;
+            border: 1px solid #CBD5E1;
         }
         .score-pill.upcoming {
             background: #F1F5F9;
@@ -169,8 +169,8 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
         <?php endif; ?>
 
         <?php if (!empty($flashError)): ?>
-            <div style="background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B; padding: 12px 18px; border-radius: var(--r); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; font-size: 13.5px;">
-                <span class="material-symbols-outlined" style="color: #DC2626; font-size: 20px;">error</span>
+            <div style="background: #FFFBEB; border: 1px solid #FDE68A; color: #B45309; padding: 12px 18px; border-radius: var(--r); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; font-size: 13.5px;">
+                <span class="material-symbols-outlined" style="color: #D97706; font-size: 20px;">warning</span>
                 <span><?= htmlspecialchars($flashError) ?></span>
             </div>
         <?php endif; ?>
@@ -210,9 +210,9 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
             <div class="stat-card">
                 <div>
                     <div class="stat-label">Matches Lost</div>
-                    <div class="stat-value" style="color: #DC2626;"><?= $stats['lost'] ?></div>
+                    <div class="stat-value" style="color: #64748B;"><?= $stats['lost'] ?></div>
                 </div>
-                <div class="stat-icon" style="color: #DC2626; background: #FEF2F2;">
+                <div class="stat-icon" style="color: #64748B; background: #F1F5F9;">
                     <span class="material-symbols-outlined">trending_down</span>
                 </div>
             </div>

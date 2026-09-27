@@ -50,8 +50,8 @@ if ($userRole === 'Coach') {
     $roleBg    = '#F5F3FF';
     $roleIcon  = 'shield_person';
 } elseif ($userRole === 'System_Admin') {
-    $roleColor = '#DC2626';
-    $roleBg    = '#FEF2F2';
+    $roleColor = '#0099ab';
+    $roleBg    = 'rgba(0, 153, 171, 0.12)';
     $roleIcon  = 'admin_panel_settings';
 }
 ?>
@@ -197,28 +197,43 @@ if ($userRole === 'Coach') {
     include __DIR__ . '/partials/med_sidebar.php';
 } elseif ($userRole === 'President') {
     include __DIR__ . '/partials/pres_sidebar.php';
+} elseif ($userRole === 'System_Admin' || $userRole === 'Admin') {
+    $activeAdminPage = 'profile';
+    include __DIR__ . '/partials/admin_sidebar.php';
 } else {
-    // Default fallback sidebar for Athlete or Admin
+    // Default fallback sidebar for Athlete
 ?>
-    <aside class="sidebar" style="width: 240px; background: var(--side-bg); color: #fff; padding: 20px 16px;">
-        <div style="font-weight: 800; font-size: 16px; margin-bottom: 24px; display: flex; align-items: center; gap: 8px;">
-            <span class="material-symbols-outlined" style="color: var(--teal);">sports_handball</span>
-            USMS Portal
+    <aside class="sidebar" style="width: 260px; background: var(--side-bg); color: #fff; display: flex; flex-direction: column;">
+        <div class="sidebar-header">
+            <span class="material-symbols-outlined logo-icon">person</span>
+            <div class="logo-text">
+                <h1>USMS</h1>
+                <p>USER PROFILE</p>
+            </div>
         </div>
-        <nav style="display: flex; flex-direction: column; gap: 6px;">
+        <nav class="sidebar-nav">
             <?php if ($userRole === 'Athlete'): ?>
-                <a href="athletic_regestration.php" class="btn btn-outline" style="justify-content: flex-start; color: #fff; border-color: rgba(255,255,255,0.2);">
-                    <span class="material-symbols-outlined">arrow_back</span> Athlete Registration
+                <a href="athletic_regestration.php" class="sidebar-link">
+                    <span class="material-symbols-outlined">arrow_back</span>
+                    <span>Return to Athlete Portal</span>
                 </a>
             <?php else: ?>
-                <a href="login.php" class="btn btn-outline" style="justify-content: flex-start; color: #fff; border-color: rgba(255,255,255,0.2);">
-                    <span class="material-symbols-outlined">arrow_back</span> Return to Portal
+                <a href="login.php" class="sidebar-link">
+                    <span class="material-symbols-outlined">arrow_back</span>
+                    <span>Return to Portal</span>
                 </a>
             <?php endif; ?>
-            <a href="profile.php" class="btn btn-teal" style="justify-content: flex-start; margin-top: 10px;">
-                <span class="material-symbols-outlined">person</span> Account Profile
+            <a href="profile.php" class="sidebar-link active">
+                <span class="material-symbols-outlined">person</span>
+                <span>Account Profile</span>
             </a>
         </nav>
+        <div class="sidebar-footer">
+            <a href="../controllers/AuthController.php?action=logout" class="sidebar-link">
+                <span class="material-symbols-outlined">logout</span>
+                <span>Sign Out</span>
+            </a>
+        </div>
     </aside>
 <?php } ?>
 
@@ -251,8 +266,8 @@ if ($userRole === 'Coach') {
         <?php endif; ?>
 
         <?php if (!empty($flashError)): ?>
-            <div style="background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B; padding: 12px 18px; border-radius: var(--r); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; font-size: 13.5px;">
-                <span class="material-symbols-outlined" style="color: #DC2626; font-size: 20px;">error</span>
+            <div style="background: #FFFBEB; border: 1px solid #FDE68A; color: #B45309; padding: 12px 18px; border-radius: var(--r); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; font-size: 13.5px;">
+                <span class="material-symbols-outlined" style="color: #D97706; font-size: 20px;">warning</span>
                 <span><?= htmlspecialchars($flashError) ?></span>
             </div>
         <?php endif; ?>
@@ -334,7 +349,7 @@ if ($userRole === 'Coach') {
 
                         <div class="form-grid-2" style="margin-top: 12px;">
                             <div class="form-group">
-                                <label class="form-label">Official University Email <span style="color: var(--danger)">*</span></label>
+                                <label class="form-label">Email Address <span style="color: var(--danger)">*</span></label>
                                 <input type="email" name="email" class="form-input" value="<?= htmlspecialchars($userProfile['email']) ?>" required>
                             </div>
 
@@ -372,12 +387,12 @@ if ($userRole === 'Coach') {
                         <div class="form-grid-2">
                             <div class="form-group">
                                 <label class="form-label">New Password <span style="color: var(--danger)">*</span></label>
-                                <input type="password" name="new_password" class="form-input" placeholder="Min. 6 characters" minlength="6" required>
+                                <input type="password" name="new_password" class="form-input" placeholder="Min. 8 characters" minlength="8" required>
                             </div>
 
                             <div class="form-group">
                                 <label class="form-label">Confirm New Password <span style="color: var(--danger)">*</span></label>
-                                <input type="password" name="confirm_password" class="form-input" placeholder="Re-enter new password" minlength="6" required>
+                                <input type="password" name="confirm_password" class="form-input" placeholder="Re-enter new password" minlength="8" required>
                             </div>
                         </div>
 

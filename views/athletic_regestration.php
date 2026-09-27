@@ -104,6 +104,22 @@ $availableSeasons = $sportAppModel->getAllSeasons();
 $myApplications = $sportAppModel->getAthleteApplications($athleteId);
 $appStats = $sportAppModel->getApplicationStats($athleteId);
 
+// 8. Real Announcements & Notifications
+require_once __DIR__ . '/../models/Announcement.php';
+$athleteAnnouncements = [];
+try {
+    $annModel = new Announcement();
+    $athleteAnnouncements = $annModel->getActiveForNotifications(6, 'Athlete');
+} catch (Exception $e) {
+    $athleteAnnouncements = [];
+}
+
+// Compute total actionable notifications
+$totalAthleteNotifs = count($athleteAnnouncements)
+    + ($nextFixture ? 1 : 0)
+    + ($medicalClearance ? 1 : 0)
+    + ($activeApps > 0 ? 1 : 0);
+
 $currentView = $_GET['view'] ?? 'dashboard-view';
 if (!in_array($currentView, ['dashboard-view', 'apply-view', 'applications-view', 'submission-view', 'application-details-view', 'calendar-view', 'profile-view', 'edit-profile-view'], true)) $currentView = 'dashboard-view';
 if (!empty($_SESSION['flash_error'])) {
@@ -151,17 +167,96 @@ if (!empty($_SESSION['flash_error'])) {
             <header class="top-header">
                 <div class="header-title">University Sports Management</div>
                 <div class="header-actions">
-                    <button class="notification-btn"><i class="ph ph-bell"></i><span class="notification-dot"></span></button>
-                    <div class="user-profile">
+                    <!-- Notification Bell with Real Dropdown -->
+                    <div class="athlete-notif-wrap" style="position: relative;">
+                        <button type="button" class="notification-btn" id="athleteNotifBtn" title="System Notifications &amp; Alerts" onclick="toggleAthleteNotif(event)" style="position: relative;">
+                            <i class="ph ph-bell"></i>
+                            <?php if ($totalAthleteNotifs > 0): ?>
+                            <span class="notification-dot" style="position: absolute; top: 0; right: 2px; width: 8px; height: 8px; background: #0099ab; border-radius: 50%; box-shadow: 0 0 0 2px #fff;"></span>
+                            <?php endif; ?>
+                        </button>
+
+                        <div id="athleteNotifDropdown" class="athlete-notif-dropdown" style="display: none; position: absolute; right: 0; top: calc(100% + 10px); width: 340px; background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; z-index: 1000; overflow: hidden; text-align: left;">
+                            <div style="padding: 12px 16px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+                                <div style="font-weight: 700; font-size: 13px; color: #041427;">Notifications &amp; Alerts</div>
+                                <span style="font-size: 11px; padding: 2px 8px; border-radius: 12px; background: #e0f2fe; color: #0284c7; font-weight: 600;"><?= $totalAthleteNotifs ?> Active</span>
+                            </div>
+                            <div style="max-height: 320px; overflow-y: auto;">
+                                <?php if ($totalAthleteNotifs === 0): ?>
+                                    <div style="padding: 24px 16px; text-align: center; color: #94a3b8; font-size: 13px;">
+                                        <i class="ph ph-bell-slash" style="font-size: 24px; display: block; margin-bottom: 6px; opacity: 0.6;"></i>
+                                        All caught up! No new notifications.
+                                    </div>
+                                <?php else: ?>
+                                    <!-- Official System Announcements -->
+                                    <?php foreach ($athleteAnnouncements as $ann): ?>
+                                    <div class="notif-dropdown-item" style="padding: 10px 14px; border-bottom: 1px solid #f1f5f9; display: flex; gap: 10px; align-items: flex-start;">
+                                        <div style="width: 30px; height: 30px; border-radius: 6px; background: #e0f2fe; color: #0284c7; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;">
+                                            <i class="ph ph-megaphone-simple" style="font-size: 16px;"></i>
+                                        </div>
+                                        <div style="flex: 1; min-width: 0;">
+                                            <div style="font-size: 12.5px; font-weight: 600; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><?= htmlspecialchars($ann['title']) ?></div>
+                                            <div style="font-size: 11.5px; color: #64748b; line-height: 1.35; margin-top: 2px;"><?= htmlspecialchars(strlen($ann['content'] ?? '') > 75 ? substr($ann['content'], 0, 72) . '...' : ($ann['content'] ?? '')) ?></div>
+                                            <div style="font-size: 10px; color: #94a3b8; margin-top: 4px;"><?= date('M d, Y', strtotime($ann['created_at'])) ?></div>
+                                        </div>
+                                    </div>
+                                    <?php endforeach; ?>
+
+                                    <!-- Next Match Alert -->
+                                    <?php if ($nextFixture): ?>
+                                    <div class="notif-dropdown-item" style="padding: 10px 14px; border-bottom: 1px solid #f1f5f9; cursor: pointer; display: flex; gap: 10px; align-items: center;" onclick="switchView('dashboard-view'); toggleAthleteNotif(false);">
+                                        <div style="width: 30px; height: 30px; border-radius: 6px; background: #e0e7ff; color: #4338ca; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                            <i class="ph ph-calendar-blank" style="font-size: 16px;"></i>
+                                        </div>
+                                        <div style="flex: 1; min-width: 0;">
+                                            <div style="font-size: 12.5px; font-weight: 600; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Upcoming Fixture vs <?= htmlspecialchars($nextFixture['opponent']) ?></div>
+                                            <div style="font-size: 11px; color: #64748b;"><?= htmlspecialchars($nextFixture['sport_name']) ?> &bull; <?= date('M d, H:i', strtotime($nextFixture['fixture_date'] . ' ' . $nextFixture['fixture_time'])) ?></div>
+                                        </div>
+                                    </div>
+                                    <?php endif; ?>
+
+                                    <!-- Medical Clearance Status -->
+                                    <?php if ($medicalClearance): ?>
+                                    <div class="notif-dropdown-item" style="padding: 10px 14px; border-bottom: 1px solid #f1f5f9; cursor: pointer; display: flex; gap: 10px; align-items: center;" onclick="switchView('profile-view'); toggleAthleteNotif(false);">
+                                        <div style="width: 30px; height: 30px; border-radius: 6px; background: #ecfdf5; color: #059669; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                            <i class="ph ph-first-aid" style="font-size: 16px;"></i>
+                                        </div>
+                                        <div style="flex: 1; min-width: 0;">
+                                            <div style="font-size: 12.5px; font-weight: 600; color: #1e293b;">Medical Clearance Active</div>
+                                            <div style="font-size: 11px; color: #64748b;">Valid until <?= htmlspecialchars($medicalClearance['expiry_date']) ?></div>
+                                        </div>
+                                    </div>
+                                    <?php endif; ?>
+
+                                    <!-- Active Sport Applications -->
+                                    <?php if ($activeApps > 0): ?>
+                                    <div class="notif-dropdown-item" style="padding: 10px 14px; cursor: pointer; display: flex; gap: 10px; align-items: center;" onclick="switchView('applications-view'); toggleAthleteNotif(false);">
+                                        <div style="width: 30px; height: 30px; border-radius: 6px; background: #fef3c7; color: #b45309; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                            <i class="ph ph-file-text" style="font-size: 16px;"></i>
+                                        </div>
+                                        <div style="flex: 1; min-width: 0;">
+                                            <div style="font-size: 12.5px; font-weight: 600; color: #1e293b;"><?= $activeApps ?> Application(s) Pending</div>
+                                            <div style="font-size: 11px; color: #64748b;">Trial evaluation in progress</div>
+                                        </div>
+                                    </div>
+                                    <?php endif; ?>
+                                <?php endif; ?>
+                            </div>
+                            <div style="padding: 8px 14px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 11px; color: #94a3b8;">USMS Athlete Hub</span>
+                                <a href="#" onclick="switchView('profile-view'); toggleAthleteNotif(false); return false;" style="font-size: 11.5px; color: #0099ab; font-weight: 600; text-decoration: none;">Profile Details &rarr;</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- User Profile Pill (Navigates to Profile View) -->
+                    <div class="user-profile" id="topbar-user-profile" role="button" tabindex="0" title="View &amp; Edit Profile (Click to navigate)" style="cursor: pointer;" onclick="switchView('profile-view')">
                         <div class="user-info">
                             <span class="user-name"><?= $fullName ?></span>
-                            <span class="user-role">Athlete</span>
+                            <span class="user-role">Varsity Athlete</span>
                         </div>
-                        <img src="https://ui-avatars.com/api/?name=<?= urlencode($fullName) ?>&background=0D8ABC&color=fff&size=40" alt="User Avatar" class="avatar">
+                        <img src="https://ui-avatars.com/api/?name=<?= urlencode($fullName) ?>&background=0099ab&color=fff&size=40" alt="User Avatar" class="avatar">
                     </div>
-                    <a href="../controllers/AuthController.php?action=logout" class="notification-btn" title="Sign Out" style="text-decoration:none; color:inherit; display:flex; align-items:center; justify-content:center;">
-                        <i class="ph ph-sign-out" style="font-size:18px;"></i>
-                    </a>
                 </div>
             </header>
 

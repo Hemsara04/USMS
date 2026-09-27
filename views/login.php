@@ -27,9 +27,9 @@ unset($_SESSION['error'], $_SESSION['success']);
             gap: 8px;
         }
         .alert-error {
-            background-color: #FEE2E2;
-            color: #DC2626;
-            border: 1px solid #FECACA;
+            background-color: #FFFBEB;
+            color: #B45309;
+            border: 1px solid #FDE68A;
         }
         .alert-success {
             background-color: #F0FDF4;
@@ -136,7 +136,7 @@ unset($_SESSION['error'], $_SESSION['success']);
 
     </div>
 
-    <!-- Password visibility toggle script -->
+    <!-- Password visibility toggle script and Client-side Logical Guards -->
     <script>
     function togglePasswordVisibility(inputId, btn) {
         const input = document.getElementById(inputId);
@@ -149,10 +149,13 @@ unset($_SESSION['error'], $_SESSION['success']);
         btn.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
     }
 
-    // Role-based Registration Link Update
+    // Role-based Registration Link Update & Logical Form Validation Guard
     document.addEventListener('DOMContentLoaded', function() {
         const roleSelect = document.getElementById('role');
         const registerLink = document.getElementById('register-link');
+        const loginForm = document.querySelector('form[action*="login"]');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
         
         if (roleSelect && registerLink) {
             roleSelect.addEventListener('change', function() {
@@ -162,9 +165,52 @@ unset($_SESSION['error'], $_SESSION['success']);
                     registerLink.href = 'register.php';
                 }
             });
-            
-            // Trigger change event on load in case the browser remembers the selection
             roleSelect.dispatchEvent(new Event('change'));
+        }
+
+        // Logical Client-side Guard: Block invalid submissions before reaching backend/DB
+        if (loginForm && usernameInput && passwordInput) {
+            loginForm.addEventListener('submit', function(e) {
+                const val = usernameInput.value.trim();
+                const pw = passwordInput.value;
+                let clientError = '';
+
+                if (!val) {
+                    clientError = 'Please enter your username or email address.';
+                } else if (val.includes('@')) {
+                    // Check if actually a valid email structure
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    if (!emailRegex.test(val)) {
+                        clientError = 'Please enter a valid email address (e.g. name@domain.com).';
+                    }
+                } else if (val.length < 3) {
+                    clientError = 'Username must be at least 3 characters long.';
+                } else if (!/^[a-zA-Z0-9_.-]+$/.test(val)) {
+                    clientError = 'Username contains invalid characters.';
+                }
+
+                if (!clientError && pw.length < 4) {
+                    clientError = 'Password must be at least 4 characters long.';
+                }
+
+                if (clientError) {
+                    e.preventDefault();
+                    // Remove existing client alert if any
+                    let existingAlert = document.getElementById('client-login-alert');
+                    if (!existingAlert) {
+                        existingAlert = document.createElement('div');
+                        existingAlert.id = 'client-login-alert';
+                        existingAlert.className = 'alert-box alert-error';
+                        existingAlert.style.marginBottom = '1rem';
+                        loginForm.parentNode.insertBefore(existingAlert, loginForm);
+                    }
+                    existingAlert.innerHTML = `
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                        <span>${clientError}</span>
+                    `;
+                    usernameInput.focus();
+                }
+            });
         }
     });
     </script>

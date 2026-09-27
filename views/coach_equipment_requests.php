@@ -135,8 +135,8 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
         <?php endif; ?>
 
         <?php if (!empty($flashError)): ?>
-            <div style="background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B; padding: 12px 18px; border-radius: var(--r); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; font-size: 13.5px;">
-                <span class="material-symbols-outlined" style="color: #DC2626; font-size: 20px;">error</span>
+            <div style="background: #FFFBEB; border: 1px solid #FDE68A; color: #B45309; padding: 12px 18px; border-radius: var(--r); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; font-size: 13.5px;">
+                <span class="material-symbols-outlined" style="color: #D97706; font-size: 20px;">warning</span>
                 <span><?= htmlspecialchars($flashError) ?></span>
             </div>
         <?php endif; ?>

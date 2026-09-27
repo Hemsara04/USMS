@@ -38,9 +38,9 @@ $securityQuestions = [
             gap: 8px;
         }
         .alert-error {
-            background-color: #FEE2E2;
-            color: #DC2626;
-            border: 1px solid #FECACA;
+            background-color: #FFFBEB;
+            color: #B45309;
+            border: 1px solid #FDE68A;
         }
     </style>
 </head>
@@ -88,14 +88,14 @@ $securityQuestions = [
                         </div>
                     </div>
 
-                    <!-- Email with @uoc.ac.lk domain restriction -->
+                    <!-- Email Address (Accepts university or personal email) -->
                     <div class="auth-form-group" style="margin-bottom: 0.9rem;">
-                        <label class="auth-form-label" for="email">University Email (@uoc.ac.lk)</label>
+                        <label class="auth-form-label" for="email">Email Address</label>
                         <div class="auth-input-wrapper">
                             <svg class="auth-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-                            <input type="email" id="email" name="email" class="auth-input" placeholder="student@uoc.ac.lk" pattern=".+@uoc\.ac\.lk" title="Email address must end with @uoc.ac.lk" value="<?= htmlspecialchars($oldInput['email'] ?? '') ?>" required>
+                            <input type="email" id="email" name="email" class="auth-input" placeholder="e.g. student@uoc.ac.lk or name@example.com" value="<?= htmlspecialchars($oldInput['email'] ?? '') ?>" required>
                         </div>
-                        <div class="auth-hint">Must be an official University of Colombo email (@uoc.ac.lk)</div>
+                        <div class="auth-hint">Enter your official or personal email address</div>
                     </div>
 
                     <!-- Student Details: Index Number & Faculty -->
