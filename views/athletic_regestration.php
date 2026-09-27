@@ -137,7 +137,7 @@ if (!empty($_SESSION['flash_error'])) {
                 <a href="#" class="nav-item <?= $currentView === 'dashboard-view' ? 'active' : '' ?>" data-target="dashboard-view" id="nav-dashboard"><i class="ph ph-squares-four"></i> Dashboard</a>
                 <a href="#" class="nav-item <?= in_array($currentView, ['apply-view', 'submission-view']) ? 'active' : '' ?>" data-target="apply-view" id="nav-apply"><i class="ph ph-file-text"></i> Apply for Sport</a>
                 <a href="#" class="nav-item <?= in_array($currentView, ['applications-view', 'application-details-view']) ? 'active' : '' ?>" data-target="applications-view" id="nav-applications"><i class="ph ph-list-dashes"></i> My Applications</a>
-                <a href="?view=calendar-view" class="nav-item <?= $currentView === 'calendar-view' ? 'active' : '' ?>" id="nav-calendar"><i class="ph ph-calendar-blank"></i> Training Calendar</a>
+                <a href="?view=calendar-view" class="nav-item <?= $currentView === 'calendar-view' ? 'active' : '' ?>" data-target="calendar-view" id="nav-calendar"><i class="ph ph-calendar-blank"></i> Training Calendar</a>
                 <a href="#" class="nav-item <?= in_array($currentView, ['profile-view', 'edit-profile-view']) ? 'active' : '' ?>" data-target="profile-view" id="nav-profile"><i class="ph ph-user"></i> Profile</a>
             </nav>
             <div class="sidebar-footer">
@@ -533,7 +533,7 @@ if (!empty($_SESSION['flash_error'])) {
                                             <td>Season ID: <?= htmlspecialchars($app['season_id']) ?> (Year <?= htmlspecialchars($app['season_year']) ?>)</td>
                                             <td><?= date('Y-m-d', strtotime($app['applied_date'])) ?></td>
                                             <td><span class="status-badge <?= $badgeClass ?>"><?= $statusUpper ?></span></td>
-                                            <td><button class="btn-text view-details-btn" data-appid="<?= $app['application_id'] ?>" data-sport="<?= htmlspecialchars($app['sport_name']) ?>" data-season="Season ID: <?= htmlspecialchars($app['season_id']) ?> (Year <?= htmlspecialchars($app['season_year']) ?>)" data-status="<?= htmlspecialchars($app['status']) ?>" data-date="<?= date('Y-m-d', strtotime($app['applied_date'])) ?>" data-rejection-reason="<?= athleteEscape($app['rejection_reason']) ?>" data-statement="<?= athleteEscape($app['statement_of_interest']) ?>">View Details</button> <button type="button" class="btn-text text-red delete-application-btn" data-appid="<?= (int)$app['application_id'] ?>">Delete</button></td>
+                                            <td><button class="btn-text view-details-btn" data-appid="<?= $app['application_id'] ?>" data-sport-id="<?= (int)$app['sport_id'] ?>" data-season-id="<?= (int)$app['season_id'] ?>" data-sport="<?= htmlspecialchars($app['sport_name']) ?>" data-season="Season ID: <?= htmlspecialchars($app['season_id']) ?> (Year <?= htmlspecialchars($app['season_year']) ?>)" data-status="<?= htmlspecialchars($app['status']) ?>" data-date="<?= date('Y-m-d', strtotime($app['applied_date'])) ?>" data-rejection-reason="<?= athleteEscape($app['rejection_reason']) ?>" data-statement="<?= athleteEscape($app['statement_of_interest']) ?>">View Details</button> <button type="button" class="btn-text edit-application-btn" data-appid="<?= (int)$app['application_id'] ?>">Edit</button> <button type="button" class="btn-text text-red delete-application-btn" data-appid="<?= (int)$app['application_id'] ?>">Delete</button></td>
                                         </tr>
                                     <?php endforeach; ?>
                                 <?php endif; ?>
@@ -569,6 +569,7 @@ if (!empty($_SESSION['flash_error'])) {
                                 <h3>Statement of Interest</h3>
                                 <p id="application-statement" style="white-space: pre-wrap;"></p>
                             </div>
+                            <button type="button" class="btn btn-primary edit-application-btn" id="edit-detail-application">Edit Application</button>
                             <button type="button" class="btn btn-secondary text-red delete-application-btn" id="delete-detail-application">Delete Application</button>
                         </div>
                         
@@ -603,6 +604,39 @@ if (!empty($_SESSION['flash_error'])) {
                     </div>
                 </section>
                 
+                <section id="edit-application-view" class="view-section">
+                    <h2>Edit Application</h2>
+                    <p class="text-muted">Saving changes returns this application to Pending for review.</p>
+                    <form id="edit-application-form" class="card form-card apply-form" action="../controllers/AthleteController.php?action=update_application" method="post">
+                        <input type="hidden" name="application_id" id="edit-application-id">
+                        <input type="hidden" name="csrf_token" value="<?= athleteEscape($_SESSION['athlete_csrf']) ?>">
+                        <div class="form-group">
+                            <label for="edit-application-sport">Sport</label>
+                            <select name="sport_id" id="edit-application-sport" required>
+                                <?php foreach ($availableSports as $sport): ?>
+                                    <option value="<?= (int)$sport['sport_id'] ?>"><?= athleteEscape($sport['sport_name']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-application-season">Season</label>
+                            <select name="season_id" id="edit-application-season" required>
+                                <?php foreach ($availableSeasons as $season): ?>
+                                    <option value="<?= (int)$season['season_id'] ?>">Season <?= (int)$season['season_id'] ?> (<?= athleteEscape($season['season_year']) ?>)</option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-application-statement">Statement of Interest</label>
+                            <textarea name="statement_of_interest" id="edit-application-statement" rows="5" maxlength="16000"></textarea>
+                        </div>
+                        <p id="edit-application-error" class="text-red" role="alert" hidden></p>
+                        <div class="form-actions right">
+                            <button type="button" class="btn btn-secondary" id="cancel-application-edit">Cancel</button>
+                            <button type="submit" class="btn btn-primary" id="save-application-edit">Save Changes</button>
+                        </div>
+                    </form>
+                </section>
                 <?php require __DIR__ . '/partials/athlete_profile.php'; ?>
                 <?php require __DIR__ . '/partials/athlete_calendar.php'; ?>
 

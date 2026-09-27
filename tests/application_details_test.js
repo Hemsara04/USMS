@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const source = fs.readFileSync(__dirname + '/../assets/js/athletic_regestration.js', 'utf8');
 const nodes = {};
-for (const id of ['application-rejection', 'application-rejection-reason', 'application-statement', 'delete-detail-application']) {
+for (const id of ['application-rejection', 'application-rejection-reason', 'application-statement', 'delete-detail-application', 'edit-detail-application']) {
     nodes[id] = { style: {}, dataset: {}, textContent: '' };
 }
 const badge = {};
@@ -28,6 +28,7 @@ for (const status of ['Rejected', 'Pending', 'Approved', 'Shortlisted', 'Rejecte
     assert.equal(nodes['application-rejection-reason'].textContent, status === 'Rejected' ? 'Actual saved rejection reason' : '');
     assert.equal(badge.textContent, status);
     assert.equal(nodes['delete-detail-application'].dataset.appid, '42');
+    assert.equal(nodes['edit-detail-application'].dataset.appid, '42');
     assert.equal(nodes['application-statement'].textContent, 'My statement');
     assert.equal(rows[3].textContent, 'APP-2025-0042');
 }

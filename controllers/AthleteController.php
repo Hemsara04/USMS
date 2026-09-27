@@ -34,6 +34,10 @@ class AthleteController {
                 $this->submitApplication();
                 break;
 
+            case 'update_application':
+                $this->updateApplication();
+                break;
+
             case 'delete_application':
                 $this->deleteApplication();
                 break;
@@ -81,6 +85,54 @@ class AthleteController {
             error_log('Athlete profile save: ' . $e->getMessage());
             http_response_code(500);
             $this->sendResponse('error', 'Unable to save your profile. Please try again.');
+        }
+    }
+
+    private function updateApplication() {
+        if (!$this->userId || ($_SESSION['role'] ?? '') !== 'Athlete') {
+            http_response_code(403);
+            $this->sendResponse('error', 'Unauthorized');
+        }
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            header('Allow: POST');
+            $this->sendResponse('error', 'Use POST to update an application.');
+        }
+        if (!is_string($_POST['csrf_token'] ?? null) || empty($_SESSION['athlete_csrf'])
+            || !hash_equals($_SESSION['athlete_csrf'], $_POST['csrf_token'])) {
+            http_response_code(403);
+            $this->sendResponse('error', 'Your session expired. Reload the page and try again.');
+        }
+        $applicationId = filter_var($_POST['application_id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        if (!$applicationId) {
+            http_response_code(422);
+            $this->sendResponse('error', 'Invalid application.');
+        }
+        try {
+            $stmt = $this->db->prepare('SELECT athlete_id FROM Athletic WHERE user_id = ?');
+            $stmt->execute([$this->userId]);
+            $athleteId = $stmt->fetchColumn();
+            $sportId = filter_var($_POST['sport_id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+            $seasonId = filter_var($_POST['season_id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+            $statement = $_POST['statement_of_interest'] ?? '';
+            if (!$sportId || !$seasonId || !is_string($statement) || strlen($statement) > 64000) {
+                throw new InvalidArgumentException('Please select a valid sport and season, and keep your statement under 16,000 characters.');
+            }
+            if (!$athleteId || !$this->sportAppModel->updateAthleteApplication($applicationId, $athleteId, $sportId, $seasonId, trim($statement))) {
+                http_response_code(404);
+                $this->sendResponse('error', 'Application not found.');
+            }
+            if (($_SESSION['last_application']['application_id'] ?? null) == $applicationId) {
+                unset($_SESSION['last_application']);
+            }
+            $this->sendResponse('success', 'Application updated successfully.');
+        } catch (InvalidArgumentException $e) {
+            http_response_code(422);
+            $this->sendResponse('error', $e->getMessage());
+        } catch (PDOException $e) {
+            error_log('Athlete application update: ' . $e->getMessage());
+            http_response_code(500);
+            $this->sendResponse('error', 'Unable to update your application. Please try again.');
         }
     }
 

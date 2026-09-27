@@ -163,6 +163,24 @@ class SportApplication {
         return $stmt->fetchAll();
     }
 
+    /** Update an owned application and send the revised submission for review. */
+    public function updateAthleteApplication($applicationId, $athleticId, $sportId, $seasonId, $statement) {
+        $stmt = $this->db->prepare('SELECT application_id FROM sport_application WHERE application_id = ? AND athletic_id = ?');
+        $stmt->execute([$applicationId, $athleticId]);
+        if (!$stmt->fetchColumn()) return false;
+        if (!$this->getSportById($sportId) || !$this->getSeasonById($seasonId)) {
+            throw new InvalidArgumentException('Selected sport or season does not exist.');
+        }
+        $stmt = $this->db->prepare("SELECT application_id FROM sport_application WHERE athletic_id = ? AND sport_id = ? AND season_id = ? AND application_id <> ? AND status IN ('Pending', 'Shortlisted', 'Approved')");
+        $stmt->execute([$athleticId, $sportId, $seasonId, $applicationId]);
+        if ($stmt->fetchColumn()) {
+            throw new InvalidArgumentException('You already have an active application for this sport and season.');
+        }
+        $stmt = $this->db->prepare("UPDATE sport_application SET sport_id = ?, season_id = ?, statement_of_interest = ?, status = 'Pending', rejection_reason = NULL WHERE application_id = ? AND athletic_id = ?");
+        $stmt->execute([$sportId, $seasonId, $statement, $applicationId, $athleticId]);
+        return true;
+    }
+
     /**
      * Delete only an application owned by the authenticated athlete.
      */

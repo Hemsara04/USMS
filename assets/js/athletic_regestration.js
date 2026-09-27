@@ -2,12 +2,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // View Management
     const navItems = document.querySelectorAll('.sidebar-nav .nav-item[data-target]');
     const views = document.querySelectorAll('.view-section');
-    
+
     // Buttons for quick actions
     const editProfileBtn = document.getElementById('edit-profile-btn');
     const cancelEditBtn = document.getElementById('cancel-edit-btn');
     const saveProfileBtn = document.getElementById('save-profile-btn');
-    
+
     // Application Flow Elements
     const submitAppBtn = document.getElementById('submit-application-btn');
     const cancelAppBtn = document.getElementById('cancel-apply-btn');
@@ -16,14 +16,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const backToAppsBtn = document.getElementById('back-to-apps-btn');
     const newAppBtn = document.getElementById('new-app-btn');
     const applyErrorMsg = document.getElementById('apply-error-msg');
-    
+
     // Form Inputs
     const sportSelect = document.getElementById('apply-sport-id');
     const seasonSelect = document.getElementById('apply-season-id');
     const athleteIdInput = document.getElementById('apply-athlete-id');
     const statementInput = document.getElementById('apply-statement');
     const termsCheckbox = document.getElementById('terms-agree');
-    
+
     // Confirmation Elements
     const submissionConfirmText = document.getElementById('submission-confirm-text');
     const submissionProgramTitle = document.getElementById('submission-program-title');
@@ -52,11 +52,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // Update Nav Active State
         navItems.forEach(nav => {
             let expectedTarget = targetId;
-            
+
             // Map sub-views to their parent nav items
             if (targetId === 'edit-profile-view') expectedTarget = 'profile-view';
             if (targetId === 'submission-view') expectedTarget = 'apply-view';
-            if (targetId === 'application-details-view') expectedTarget = 'applications-view';
+            if (['application-details-view', 'edit-application-view'].includes(targetId)) expectedTarget = 'applications-view';
 
             if (nav.getAttribute('data-target') === expectedTarget) {
                 nav.classList.add('active');
@@ -64,7 +64,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 nav.classList.remove('active');
             }
         });
-        
+
+        const url = new URL(window.location.href);
+        // Detail/editor data is held in memory; reload their parent list safely.
+        url.searchParams.set('view', ['application-details-view', 'edit-application-view'].includes(targetId) ? 'applications-view' : targetId);
+        window.history.replaceState(null, '', url);
+
         // Scroll to top when switching views
         window.scrollTo(0, 0);
     }
@@ -328,16 +333,17 @@ document.addEventListener('DOMContentLoaded', () => {
                                     <td>${escapeHtml(dateApplied)}</td>
                                     <td><span class="status-badge ${badgeClass}">${statusUpper}</span></td>
                                     <td>
-                                        <button class="btn-text view-details-btn" 
-                                            data-appid="${app.application_id}" 
-                                            data-sport="${escapeHtml(app.sport_name)}" 
-                                            data-season="Season ID: ${app.season_id} (Year ${app.season_year})" 
-                                            data-status="${escapeHtml(app.status)}" 
-                                            data-date="${escapeHtml(dateApplied)}" 
+                                        <button class="btn-text view-details-btn"
+                                            data-appid="${app.application_id}"
+                                            data-sport-id="${app.sport_id}" data-season-id="${app.season_id}" data-sport="${escapeHtml(app.sport_name)}"
+                                            data-season="Season ID: ${app.season_id} (Year ${app.season_year})"
+                                            data-status="${escapeHtml(app.status)}"
+                                            data-date="${escapeHtml(dateApplied)}"
                                             data-rejection-reason="${escapeHtml(app.rejection_reason || '')}"
                                             data-statement="${escapeHtml(app.statement_of_interest || '')}">
                                             View Details
                                         </button>
+                                        <button type="button" class="btn-text edit-application-btn" data-appid="${app.application_id}">Edit</button>
                                         <button type="button" class="btn-text text-red delete-application-btn" data-appid="${app.application_id}">Delete</button>
                                     </td>
                                 </tr>
@@ -386,6 +392,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         status === 'Rejected' ? (btn.dataset.rejectionReason.trim() || 'No rejection reason was provided.') : '';
                     document.getElementById('application-statement').textContent = statement || 'No statement of interest provided.';
                     document.getElementById('delete-detail-application').dataset.appid = appId;
+                    document.getElementById('edit-detail-application').dataset.appid = appId;
                     const subtitle = detailsView.querySelector('.details-header p.text-muted');
                     if (subtitle && sport && season) subtitle.textContent = `${sport} • ${season}`;
 
@@ -431,6 +438,52 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             window.alert(error.message || 'Unable to delete the application. Please try again.');
             button.disabled = false;
+        }
+    });
+
+    const editApplicationForm = document.getElementById('edit-application-form');
+    const editApplicationError = document.getElementById('edit-application-error');
+    const saveApplicationEdit = document.getElementById('save-application-edit');
+    const cancelApplicationEdit = document.getElementById('cancel-application-edit');
+    document.addEventListener('click', event => {
+        const button = event.target.closest('.edit-application-btn');
+        if (!button || !button.dataset.appid) return;
+        const source = Array.from(document.querySelectorAll('.view-details-btn'))
+            .find(item => item.dataset.appid === button.dataset.appid);
+        if (!source) return;
+        document.getElementById('edit-application-id').value = source.dataset.appid;
+        document.getElementById('edit-application-sport').value = source.dataset.sportId;
+        document.getElementById('edit-application-season').value = source.dataset.seasonId;
+        document.getElementById('edit-application-statement').value = source.dataset.statement || '';
+        editApplicationError.hidden = true;
+        switchView('edit-application-view');
+    });
+    cancelApplicationEdit?.addEventListener('click', () => {
+        editApplicationForm.reset();
+        editApplicationError.hidden = true;
+        switchView('applications-view');
+    });
+    editApplicationForm?.addEventListener('submit', async event => {
+        event.preventDefault();
+        if (saveApplicationEdit.disabled || !editApplicationForm.reportValidity()) return;
+        saveApplicationEdit.disabled = true;
+        cancelApplicationEdit.disabled = true;
+        saveApplicationEdit.textContent = 'Saving…';
+        editApplicationError.hidden = true;
+        try {
+            const response = await fetch(editApplicationForm.action, {
+                method: 'POST', body: new FormData(editApplicationForm), headers: { 'Accept': 'application/json' }
+            });
+            const result = await response.json();
+            if (!response.ok || result.status !== 'success') throw new Error(result.message || 'Unable to save application.');
+            window.location.assign('?view=applications-view');
+        } catch (error) {
+            editApplicationError.textContent = error.message || 'Unable to save application. Please try again.';
+            editApplicationError.hidden = false;
+        } finally {
+            saveApplicationEdit.disabled = false;
+            cancelApplicationEdit.disabled = false;
+            saveApplicationEdit.textContent = 'Save Changes';
         }
     });
 

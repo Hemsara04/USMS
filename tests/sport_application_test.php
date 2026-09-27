@@ -24,6 +24,25 @@ try {
         applicationCheck(!$model->deleteAthleteApplication($id, $athletes[0]), 'Repeated deletion reports missing application.');
         applicationCheck($model->getApplicationStats($athletes[0]) === $before, 'Counts return to their original values.');
     }
+    $db->exec("INSERT INTO seasons (season_year, academic_year, status) VALUES (2091, 2091, 'Active')");
+    $editSeason = $db->lastInsertId();
+    $insert->execute([$athletes[0], $sport, $editSeason, 'Rejected', 'Old reason']);
+    $editId = (int)$db->lastInsertId();
+    applicationCheck(!$model->updateAthleteApplication($editId, $athletes[1], $sport, $editSeason, 'Unauthorized'), 'Other athletes cannot edit.');
+    applicationCheck($model->updateAthleteApplication($editId, $athletes[0], $sport, $editSeason, 'Updated statement'), 'Owner can edit.');
+    $apps = array_column($model->getAthleteApplications($athletes[0]), null, 'application_id');
+    applicationCheck($apps[$editId]['statement_of_interest'] === 'Updated statement' && $apps[$editId]['status'] === 'Pending' && $apps[$editId]['rejection_reason'] === null, 'Changes persist and return to review.');
+    applicationCheck($model->updateAthleteApplication($editId, $athletes[0], $sport, $editSeason, 'Updated statement'), 'Unchanged save succeeds.');
+    try {
+        $model->updateAthleteApplication($editId, $athletes[0], 2147483647, $editSeason, 'Invalid');
+        throw new RuntimeException('Missing sport accepted.');
+    } catch (InvalidArgumentException $expected) {}
+    $insert->execute([$athletes[0], $sport, $editSeason, 'Approved', null]);
+    try {
+        $model->updateAthleteApplication($editId, $athletes[0], $sport, $editSeason, 'Duplicate');
+        throw new RuntimeException('Duplicate accepted.');
+    } catch (InvalidArgumentException $expected) {}
+    echo "PASS: editing ownership, persistence, review reset, unchanged save, sport validation and duplicate prevention.\n";
     echo "PASS: deletion ownership, all statuses, saved rejection reason, missing applications and statistics.\n";
 } finally {
     $db->rollBack();
