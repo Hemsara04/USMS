@@ -335,10 +335,26 @@ function getInitials($name) {
                     <label for="createPhone">Contact Phone</label>
                     <input id="createPhone" type="text" name="phone_number" placeholder="e.g. +94 77 123 4567" autocomplete="off">
                 </div>
-                <div class="admin-field full-col">
+                <div class="admin-field">
                     <label for="createPassword">Initial Password *</label>
                     <input id="createPassword" type="password" name="password" required placeholder="Minimum 8 characters" minlength="8" autocomplete="new-password">
-                    <small class="field-hint">Temporary password. User will authenticate using this credential (min 8 characters).</small>
+                    <small class="field-hint">Temporary password (min 8 characters)</small>
+                </div>
+                <div class="admin-field">
+                    <label for="createSecurityQuestion">Security Question *</label>
+                    <select id="createSecurityQuestion" name="security_question" required>
+                        <option value="What is your favorite sport?" selected>What is your favorite sport?</option>
+                        <option value="What was the name of your first school?">What was the name of your first school?</option>
+                        <option value="What is your birthplace / hometown?">What is your birthplace / hometown?</option>
+                        <option value="What is your mother's maiden name?">What is your mother's maiden name?</option>
+                        <option value="What was your childhood nickname?">What was your childhood nickname?</option>
+                    </select>
+                    <small class="field-hint">For self-service password recovery</small>
+                </div>
+                <div class="admin-field full-col">
+                    <label for="createSecurityAnswer">Security Verification Answer *</label>
+                    <input id="createSecurityAnswer" type="text" name="security_answer" required placeholder="e.g. Football or Royal College" autocomplete="off">
+                    <small class="field-hint">Secret answer verified during password reset</small>
                 </div>
             </div>
 
@@ -425,10 +441,26 @@ function getInitials($name) {
                     <label for="editPhone">Contact Phone</label>
                     <input id="editPhone" type="text" name="phone_number">
                 </div>
-                <div class="admin-field full-col">
+                <div class="admin-field">
                     <label for="editPassword">Reset Password (Optional)</label>
                     <input id="editPassword" type="password" name="password" minlength="8" placeholder="Leave blank to retain current password">
-                    <small class="field-hint">Only fill this if resetting the user's password (min 8 characters).</small>
+                    <small class="field-hint">Min 8 characters if changing password</small>
+                </div>
+                <div class="admin-field">
+                    <label for="editSecurityQuestion">Security Question</label>
+                    <select id="editSecurityQuestion" name="security_question">
+                        <option value="What is your favorite sport?">What is your favorite sport?</option>
+                        <option value="What was the name of your first school?">What was the name of your first school?</option>
+                        <option value="What is your birthplace / hometown?">What is your birthplace / hometown?</option>
+                        <option value="What is your mother's maiden name?">What is your mother's maiden name?</option>
+                        <option value="What was your childhood nickname?">What was your childhood nickname?</option>
+                    </select>
+                    <small class="field-hint">For self-service password recovery</small>
+                </div>
+                <div class="admin-field full-col">
+                    <label for="editSecurityAnswer">Update Security Answer (Optional)</label>
+                    <input id="editSecurityAnswer" type="text" name="security_answer" placeholder="Leave blank to retain current answer" autocomplete="off">
+                    <small class="field-hint">Only fill to change secret recovery answer</small>
                 </div>
             </div>
 
@@ -543,6 +575,10 @@ function getInitials($name) {
                 <div class="dossier-item">
                     <span class="d-label">Account Status</span>
                     <strong class="d-val" style="color:var(--admin-success);">Active Verified</strong>
+                </div>
+                <div class="dossier-item full-col">
+                    <span class="d-label">Security Recovery Question</span>
+                    <strong class="d-val" id="viewSecurityQuestion">—</strong>
                 </div>
             </div>
 
@@ -924,6 +960,8 @@ function openEditModal(user) {
     document.getElementById('editRole').value = user.role || 'Athlete';
     document.getElementById('editPhone').value = user.phone_number || '';
     document.getElementById('editPassword').value = '';
+    document.getElementById('editSecurityQuestion').value = user.security_question || 'What is your favorite sport?';
+    document.getElementById('editSecurityAnswer').value = '';
     
     // Athlete fields
     document.getElementById('editFullName').value = user.athlete_name || '';
@@ -948,6 +986,7 @@ function openViewModal(user) {
     document.getElementById('viewEmail').textContent = user.email || '—';
     document.getElementById('viewPhone').textContent = user.phone_number || '—';
     document.getElementById('viewRole').textContent = user.role.replace('_', ' ');
+    document.getElementById('viewSecurityQuestion').textContent = user.security_question || 'Not Configured';
 
     const athleteSec = document.getElementById('viewAthleteSection');
     if (user.role === 'Athlete') {
@@ -994,6 +1033,7 @@ function validateProvisionForm(e) {
     const email = document.getElementById('createEmail').value.trim();
     const password = document.getElementById('createPassword').value;
     const role = document.getElementById('createRole').value;
+    const secAnswer = document.getElementById('createSecurityAnswer').value.trim();
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (username.length < 3) {
@@ -1013,6 +1053,13 @@ function validateProvisionForm(e) {
     if (password.length < 8) {
         showClientAlert('Initial password must be at least 8 characters long.');
         document.getElementById('createPassword').focus();
+        e.preventDefault();
+        return false;
+    }
+
+    if (!secAnswer) {
+        showClientAlert('Please provide a secret answer for security verification.');
+        document.getElementById('createSecurityAnswer').focus();
         e.preventDefault();
         return false;
     }
@@ -1071,14 +1118,15 @@ function validateEditForm(e) {
 }
 
 function showClientAlert(msg) {
+    if (typeof showToast === 'function') {
+        showToast(msg, 'warning');
+    }
     const alertBox = document.getElementById('clientValidationAlert');
     const msgBox = document.getElementById('clientValidationMsg');
     if (alertBox && msgBox) {
         msgBox.textContent = msg;
         alertBox.style.display = 'flex';
         window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else {
-        alert(msg);
     }
 }
 

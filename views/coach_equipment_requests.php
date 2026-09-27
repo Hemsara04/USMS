@@ -322,7 +322,7 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
                                             Cancel
                                         </button>
                                     <?php else: ?>
-                                        <button type="button" class="btn btn-danger btn-sm" onclick="alert('Requisition <?= $req['req_id'] ?> cancelled successfully.')">
+                                        <button type="button" class="btn btn-danger btn-sm" onclick="showToast('Requisition <?= $req['req_id'] ?> cancelled successfully.', 'success', 'Cancelled')">
                                             Cancel
                                         </button>
                                     <?php endif; ?>

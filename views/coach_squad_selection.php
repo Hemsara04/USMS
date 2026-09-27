@@ -233,7 +233,7 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
                     <span style="font-size: 11.5px; color: var(--text-3); display: block;">Match Date</span>
                     <strong style="font-size: 13px; color: var(--accent-dark);"><?= htmlspecialchars($activeFixture['display_date'] ?? 'Upcoming') ?></strong>
                 </div>
-                <button type="button" class="btn btn-outline btn-sm" onclick="alert('Rules: Max 18 players per squad. All athletes must possess valid medical clearance.')">
+                <button type="button" class="btn btn-outline btn-sm" onclick="showToast('Rules: Max 18 players per squad. All athletes must possess valid medical clearance.', 'info', 'Squad Eligibility')">
                     <span class="material-symbols-outlined" style="font-size: 15px;">info</span>
                     Eligibility Rules
                 </button>
@@ -463,12 +463,12 @@ function updateRoleBadge(select) {
 function addToSquad(id, name, position, faculty, athleteId) {
     var existingRows = document.querySelectorAll('#squadTableBody tr[data-athlete-id]');
     if (existingRows.length >= 18) {
-        alert('Squad limit reached (Maximum 18 players). Please remove a substitute first.');
+        showToast('Squad limit reached (Maximum 18 players). Please remove a substitute first.', 'warning', 'Squad Limit');
         return;
     }
     var existing = document.getElementById('squad-row-' + id);
     if (existing) {
-        alert(name + ' is already in the match squad.');
+        showToast(name + ' is already in the match squad.', 'warning', 'Duplicate Selection');
         return;
     }
 

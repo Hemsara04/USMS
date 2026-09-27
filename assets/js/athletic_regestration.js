@@ -1,3 +1,69 @@
+// Universal Toast Notification System & Alert Override
+if (typeof window.showToast !== 'function') {
+    window.showToast = function(message, type, title) {
+        if (!type) type = 'warning';
+        var container = document.getElementById('usmsToastContainer');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'usmsToastContainer';
+            document.body.appendChild(container);
+        }
+
+        var toast = document.createElement('div');
+        var toastType = (type === 'error' || type === 'warn' || type === 'warning') ? 'warning' : (type === 'success' ? 'success' : 'info');
+        toast.className = 'usms-toast usms-toast-' + toastType;
+
+        var defaultTitle = 'Notice';
+        var iconName = 'info';
+        if (toastType === 'warning') {
+            defaultTitle = title || 'Validation Alert';
+            iconName = 'warning';
+        } else if (toastType === 'success') {
+            defaultTitle = title || 'Success';
+            iconName = 'check_circle';
+        } else {
+            defaultTitle = title || 'Information';
+            iconName = 'info';
+        }
+
+        var safeTitle = document.createElement('div');
+        safeTitle.textContent = defaultTitle;
+        var safeMsg = document.createElement('div');
+        safeMsg.textContent = message;
+
+        toast.innerHTML = 
+            '<div class="usms-toast-icon-wrap">' +
+                '<span class="material-symbols-outlined" style="font-size: 20px;">' + iconName + '</span>' +
+            '</div>' +
+            '<div class="usms-toast-body">' +
+                '<div class="usms-toast-title">' + safeTitle.innerHTML + '</div>' +
+                '<div class="usms-toast-msg">' + safeMsg.innerHTML + '</div>' +
+            '</div>' +
+            '<button type="button" class="usms-toast-close" aria-label="Close notification">✕</button>';
+
+        function dismiss() {
+            if (toast.classList.contains('hide')) return;
+            toast.classList.add('hide');
+            setTimeout(function() {
+                if (toast.parentElement) toast.remove();
+            }, 300);
+        }
+
+        var closeBtn = toast.querySelector('.usms-toast-close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', dismiss);
+        }
+
+        container.appendChild(toast);
+
+        // Auto dismiss after 4.5 seconds
+        setTimeout(dismiss, 4500);
+    };
+}
+window.alert = function(msg) {
+    window.showToast(msg, 'warning');
+};
+
 document.addEventListener('DOMContentLoaded', () => {
     // View Management
     const navItems = document.querySelectorAll('.sidebar-nav .nav-item[data-target]');
@@ -261,9 +327,8 @@ document.addEventListener('DOMContentLoaded', () => {
             applyErrorMsg.textContent = message;
             applyErrorMsg.style.display = 'block';
             applyErrorMsg.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        } else {
-            alert(message);
         }
+        showToast(message, 'warning', 'Application Alert');
     }
 
     // Refresh Applications List via AJAX
@@ -436,7 +501,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             window.location.href = 'athletic_regestration.php?view=applications-view';
         } catch (error) {
-            window.alert(error.message || 'Unable to delete the application. Please try again.');
+            showToast(error.message || 'Unable to delete the application. Please try again.', 'warning', 'Action Failed');
             button.disabled = false;
         }
     });

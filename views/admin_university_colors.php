@@ -681,7 +681,7 @@ $pageTitle = 'University Colours';
             var name = document.getElementById('colorAwardName').value.trim();
 
             if (!ath || !sp || !sea || !name) {
-                alert('Please fill in all required fields to record University Colours.');
+                showToast('Please fill in all required fields to record University Colours.', 'warning', 'Missing Fields');
                 e.preventDefault();
                 return false;
             }

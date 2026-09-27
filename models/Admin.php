@@ -91,6 +91,7 @@ class Admin {
                 u.email,
                 u.phone_number,
                 u.role,
+                u.security_question,
                 a.athlete_id,
                 a.full_name AS athlete_name,
                 a.index_number,
@@ -136,6 +137,7 @@ class Admin {
                 u.email,
                 u.phone_number,
                 u.role,
+                u.security_question,
                 a.athlete_id,
                 a.full_name AS athlete_name,
                 a.index_number,
@@ -239,6 +241,12 @@ class Admin {
             }
             if (strlen($password) < 8) {
                 throw new Exception("Password must be at least 8 characters long.");
+            }
+            if (empty(trim($data['security_question'] ?? ''))) {
+                throw new Exception("Security question is required.");
+            }
+            if (empty(trim($data['security_answer'] ?? ''))) {
+                throw new Exception("Security answer is required.");
             }
         } elseif (!empty($password) && strlen($password) < 8) {
             throw new Exception("New password must be at least 8 characters long.");
@@ -403,8 +411,16 @@ class Admin {
 
             $pwSql = "";
             if (!empty($password)) {
-                $pwSql = ", `password_hash` = :password_hash";
+                $pwSql .= ", `password_hash` = :password_hash";
                 $params[':password_hash'] = password_hash($password, PASSWORD_BCRYPT);
+            }
+            if (!empty($data['security_question'])) {
+                $pwSql .= ", `security_question` = :security_question";
+                $params[':security_question'] = trim($data['security_question']);
+            }
+            if (!empty($data['security_answer'])) {
+                $pwSql .= ", `security_answere_hash` = :security_answere_hash";
+                $params[':security_answere_hash'] = password_hash(strtolower(trim($data['security_answer'])), PASSWORD_BCRYPT);
             }
 
             $stmt = $this->db->prepare("

@@ -834,7 +834,7 @@ CREATE TABLE `training_sessions` (
   `session_date` date NOT NULL,
   `start_time` time NOT NULL,
   `duration_minutes` time NOT NULL,
-  `session_type` enum('Practice','Conditioning','Tactical') NOT NULL,
+  `session_type` varchar(50) NOT NULL DEFAULT 'Practice',
   `focus_area` varchar(255) DEFAULT NULL,
   `notes` text DEFAULT NULL,
   PRIMARY KEY (`session_id`),

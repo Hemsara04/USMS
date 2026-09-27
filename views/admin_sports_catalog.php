@@ -322,7 +322,7 @@ function validateSportForm(form) {
     if (!input) return true;
     const val = input.value.trim();
     if (val.length < 2) {
-        alert('Sport name must be at least 2 characters long.');
+        showToast('Sport name must be at least 2 characters long.', 'warning', 'Invalid Input');
         input.focus();
         return false;
     }

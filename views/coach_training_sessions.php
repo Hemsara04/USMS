@@ -16,6 +16,7 @@ $attendanceRoster = $coachModel->getSessionAttendance($selectedSessionId);
 $pageTitle = 'Training Schedule & Attendance Tracker';
 $flashSuccess = $_SESSION['flash_success'] ?? null;
 $flashError   = $_SESSION['flash_error'] ?? null;
+unset($_SESSION['flash_success'], $_SESSION['flash_error']);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -136,15 +137,21 @@ $flashError   = $_SESSION['flash_error'] ?? null;
     <div class="page-content">
 
         <?php if (!empty($flashSuccess)): ?>
-            <div style="background:#F0FDF4; border:1px solid #BBF7D0; color:#16A34A; padding:10px 14px; border-radius:8px; margin-bottom:14px; font-size:13.5px; display:flex; align-items:center; gap:8px;">
-                <span class="material-symbols-outlined" style="font-size:18px;">check_circle</span>
-                <span><?= htmlspecialchars($flashSuccess) ?></span>
+            <div style="background:#F0FDF4; border:1px solid #BBF7D0; color:#16A34A; padding:10px 14px; border-radius:8px; margin-bottom:14px; font-size:13.5px; display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span class="material-symbols-outlined" style="font-size:18px;">check_circle</span>
+                    <span><?= htmlspecialchars($flashSuccess) ?></span>
+                </div>
+                <button type="button" onclick="this.parentElement.remove()" style="background:none; border:none; cursor:pointer; font-size:16px; color:#16A34A; padding:0 4px;" aria-label="Close">✕</button>
             </div>
         <?php endif; ?>
         <?php if (!empty($flashError)): ?>
-            <div style="background:#FFFBEB; border:1px solid #FDE68A; color:#B45309; padding:10px 14px; border-radius:8px; margin-bottom:14px; font-size:13.5px; display:flex; align-items:center; gap:8px;">
-                <span class="material-symbols-outlined" style="font-size:18px;">warning</span>
-                <span><?= htmlspecialchars($flashError) ?></span>
+            <div style="background:#FFFBEB; border:1px solid #FDE68A; color:#B45309; padding:10px 14px; border-radius:8px; margin-bottom:14px; font-size:13.5px; display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span class="material-symbols-outlined" style="font-size:18px;">warning</span>
+                    <span><?= htmlspecialchars($flashError) ?></span>
+                </div>
+                <button type="button" onclick="this.parentElement.remove()" style="background:none; border:none; cursor:pointer; font-size:16px; color:#B45309; padding:0 4px;" aria-label="Close">✕</button>
             </div>
         <?php endif; ?>
 
@@ -743,7 +750,7 @@ function validateSessionDateTimeInputs(dateFieldId, timeFieldId) {
     var todayStr = year + '-' + month + '-' + day;
 
     if (dInput.value < todayStr) {
-        alert('Cannot select a past date.');
+        showToast('Cannot select a past date for a training session.', 'warning', 'Invalid Date');
         dInput.value = todayStr;
         return false;
     }
@@ -753,7 +760,7 @@ function validateSessionDateTimeInputs(dateFieldId, timeFieldId) {
         var currentMinutes = String(now.getMinutes()).padStart(2, '0');
         var currentTimeStr = currentHours + ':' + currentMinutes;
         if (tInput.value < currentTimeStr) {
-            alert('Session start time cannot be earlier than current time for today.');
+            showToast('Session start time cannot be earlier than current time for today.', 'warning', 'Invalid Time');
             now.setHours(now.getHours() + 1);
             var nextH = String(now.getHours()).padStart(2, '0');
             tInput.value = nextH + ':00';

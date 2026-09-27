@@ -299,7 +299,7 @@ function validateSeasonForm(form) {
     if (!yrInput) return true;
     const yr = parseInt(yrInput.value, 10);
     if (isNaN(yr) || yr < 2020 || yr > 2040) {
-        alert('Season year must be a realistic positive year (between 2020 and 2040).');
+        showToast('Season year must be a realistic positive year (between 2020 and 2040).', 'warning', 'Invalid Year');
         yrInput.focus();
         return false;
     }

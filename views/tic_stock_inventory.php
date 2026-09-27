@@ -128,7 +128,7 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
                     <div class="action-card-desc">Auto-detects existing gear & restocks units</div>
                 </div>
             </button>
-            <button class="action-card" onclick="alert('Exporting inventory ledger to CSV / PDF...');">
+            <button class="action-card" onclick="showToast('Exporting inventory ledger to CSV / PDF...', 'info', 'Exporting Data');">
                 <div class="action-card-icon">
                     <span class="material-symbols-outlined">download</span>
                 </div>
